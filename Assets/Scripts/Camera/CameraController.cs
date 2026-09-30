@@ -20,8 +20,8 @@ public class OrbitalCamera : MonoBehaviour
 
     [Header("Zoom")]
     [SerializeField] private float zoomSpeed = 10f;
-    [SerializeField] private float minDistance = 3f;
-    [SerializeField] private float maxDistance = 20f;
+    [SerializeField] private float minDistance = 12f;
+    [SerializeField] private float maxDistance = 30f;
     [SerializeField] private float zoomSmoothTime = 0.15f;
 
     [Header("Rotation Smoothing")]

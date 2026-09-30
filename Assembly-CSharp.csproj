@@ -54,11 +54,13 @@
   <ItemGroup>
     <Compile Include="Assets\Scripts\Camera\CameraController.cs" />
     <Compile Include="Assets\TutorialInfo\Readme.cs" />
+    <Compile Include="Assets\Scripts\Maps\EarthGenerator.cs" />
     <Compile Include="Assets\Scripts\Maps\PoliticalMaps.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\TutorialInfo\StyleSheets\ReadmeEditor.uss" />
     <None Include="Assets\TutorialInfo\StyleSheets\ReadmeEditorLight.uss" />
+    <None Include="Assets\Materials\CountryOverlayHighlight.shader" />
     <None Include="Assets\TutorialInfo\StyleSheets\ReadmeEditorDark.uss" />
   </ItemGroup>
   <ItemGroup>
