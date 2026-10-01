@@ -9,6 +9,7 @@ public class EquirectIDMapTest : MonoBehaviour
 
     [Header("Texture")]
     [SerializeField] private Color fillColor = new Color(1f, 0f, 0f, 0.6f);
+    [SerializeField] private Texture2D importedIDMap;
 
     public Texture2D Generate()
     {
@@ -34,7 +35,7 @@ public class EquirectIDMapTest : MonoBehaviour
 
         tex.SetPixels(pixels);
         tex.Apply();
-        GetComponent<Renderer>().material.mainTexture = tex;
-        return tex;
+        GetComponent<Renderer>().material.mainTexture = importedIDMap;
+        return importedIDMap;
     }
 }
