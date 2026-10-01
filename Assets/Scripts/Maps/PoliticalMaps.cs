@@ -19,6 +19,7 @@ public class EquirectRectangleTest : MonoBehaviour
     [SerializeField] private int height = 512;
     [SerializeField] private Color fillColor = new Color(1f, 0f, 0f, 0.6f);
     [SerializeField] private bool flipV = false; // flip if the shape appears mirrored top/bottom
+    [SerializeField] private byte testID = 1; // 0 = no country
 
     private void Start()
     {

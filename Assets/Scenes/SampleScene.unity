@@ -444,7 +444,7 @@ SphereCollider:
   m_LayerOverridePriority: 0
   m_IsTrigger: 0
   m_ProvidesContacts: 0
-  m_Enabled: 0
+  m_Enabled: 1
   serializedVersion: 3
   m_Radius: 0.5
   m_Center: {x: 0, y: 0, z: 0}
@@ -599,6 +599,8 @@ GameObject:
   - component: {fileID: 842697094}
   - component: {fileID: 842697093}
   - component: {fileID: 842697096}
+  - component: {fileID: 842697097}
+  - component: {fileID: 842697098}
   m_Layer: 0
   m_Name: Boundaries
   m_TagString: Untagged
@@ -628,7 +630,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 842697091}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d7d1ba8fbe3dfc64fbf8cf3023a445e0, type: 3}
   m_Name: 
@@ -641,6 +643,7 @@ MonoBehaviour:
   height: 512
   fillColor: {r: 1, g: 0, b: 0, a: 0.6}
   flipV: 0
+  testID: 1
 --- !u!23 &842697094
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -715,6 +718,112 @@ MonoBehaviour:
   radius: 1
   flipV: 0
   addMeshCollider: 0
+--- !u!114 &842697097
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 842697091}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 63ccfd1c811b7754484d3a85bed2d595, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
+  minLat: -90
+  maxLat: 90
+  minLon: -20
+  maxLon: -10
+  width: 1024
+  height: 512
+  testID: 1
+  flipV: 0
+  fillColor: {r: 1, g: 0, b: 0, a: 0.6}
+--- !u!135 &842697098
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 842697091}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Radius: 0.5001
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!1 &1366085637
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1366085639}
+  - component: {fileID: 1366085638}
+  - component: {fileID: 1366085640}
+  m_Layer: 0
+  m_Name: CountryPicker
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1366085638
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1366085637}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0632f8904b185d04299444abafc40b5d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
+  earthTransform: {fileID: 842697092}
+  cam: {fileID: 330585545}
+  flipV: 0
+  dragThresholdPixels: 6
+--- !u!4 &1366085639
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1366085637}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1366085640
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1366085637}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c5b290955765c534a9d101e4938ea72e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
+  picker: {fileID: 1366085638}
+  overlayRenderer: {fileID: 842697094}
+  idMapGenerator: {fileID: 842697097}
 --- !u!1 &1406750337
 GameObject:
   m_ObjectHideFlags: 0
@@ -756,3 +865,4 @@ SceneRoots:
   - {fileID: 410087041}
   - {fileID: 832575519}
   - {fileID: 1406750338}
+  - {fileID: 1366085639}
