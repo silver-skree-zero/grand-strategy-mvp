@@ -2,7 +2,7 @@ Shader "Custom/CountryOverlayHighlight"
 {
     Properties
     {
-        _MainTex ("Overlay Visual", 2D) = "white" {}
+        _MainTex ("Overlay Visual", 2D) = "black" {}
         _IDTex ("ID Map", 2D) = "black" {}
         _HighlightID ("Highlighted ID", Float) = 0
         _HighlightColor ("Highlight Tint", Color) = (1,1,1,1)

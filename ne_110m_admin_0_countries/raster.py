@@ -44,7 +44,9 @@ FLIP_V = False
 # ADM0_A3 instead (this script tries ISO_A3 first, then falls back
 # automatically -- see resolve_country_geometry below).
 COUNTRY_IDS = {
-    "CAN": 255,
+    "USA": 255,
+    "CAN": 128,
+    "FRA": 30
 }
 
 
