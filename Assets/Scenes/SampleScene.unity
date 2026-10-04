@@ -824,7 +824,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: '::'
   picker: {fileID: 1366085638}
   overlayRenderer: {fileID: 842697094}
-  idMapGenerator: {fileID: 842697097}
+  idMap: {fileID: 2800000, guid: ec0560e62c14ea844a77e8164e1856c1, type: 3}
 --- !u!1 &1406750337
 GameObject:
   m_ObjectHideFlags: 0
