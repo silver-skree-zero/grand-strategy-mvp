@@ -68,6 +68,7 @@
     <None Include="Assets\Materials\BorderLineScreenSpace.shader" />
     <None Include="Assets\TutorialInfo\StyleSheets\ReadmeEditorLight.uss" />
     <None Include="Assets\Materials\CountryOverlayHighlight.shader" />
+    <None Include="Assets\Materials\AtmosphereShader.shader" />
     <None Include="Assets\Materials\TerritoryOverlayNeutral.shader" />
     <None Include="Assets\TutorialInfo\StyleSheets\ReadmeEditorDark.uss" />
   </ItemGroup>

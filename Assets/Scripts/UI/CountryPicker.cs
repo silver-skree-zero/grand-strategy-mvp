@@ -60,7 +60,8 @@ public class CountryPicker : MonoBehaviour
         int px = Mathf.Clamp(Mathf.FloorToInt(uv.x * _texWidth), 0, _texWidth - 1);
         int py = Mathf.Clamp(Mathf.FloorToInt(uv.y * _texHeight), 0, _texHeight - 1);
 
-        byte id = _idPixels[py * _texWidth + px].r;
+        //int id = pixel.r + pixel.g * 256;
+        int id = (int)(_idPixels[py * _texWidth + px].r) + (int)(_idPixels[py * _texWidth + px].g) * 256;
         //Debug.Log("test: " + id);
         return id == 0 ? -1 : id;
     }

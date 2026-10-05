@@ -40,7 +40,7 @@ from PIL import Image
 
 # ---- Configuration ------------------------------------------------------
 
-SHAPEFILE_PATH = "ne_10m_admin_0_countries_usa.shp"
+SHAPEFILE_PATH = "ne_10m_admin_1_states_provinces.shp"
 OUTPUT_ID_MAP_PATH = "country_id_map.png"
 OUTPUT_LOOKUP_PATH = "country_id_lookup.json"
 
@@ -81,7 +81,7 @@ def resolve_iso(row):
 def main():
     gdf = gpd.read_file(SHAPEFILE_PATH)
 
-    id_array = np.zeros((HEIGHT, WIDTH), dtype=np.uint8)
+    id_array = np.zeros((HEIGHT, WIDTH), dtype=np.uint16)
     lon_grid, lat_grid = pixel_grid_latlon(WIDTH, HEIGHT, FLIP_V)
 
     id_lookup = {}
@@ -93,14 +93,12 @@ def main():
             continue
 
         iso_code = str(resolve_iso(row))
-        if iso_code == "BLM" or iso_code == "SMR" or iso_code == "VAT" or iso_code == "MCO" or iso_code == "AND":
-            continue
+        #if iso_code == "BLM" or iso_code == "SMR" or iso_code == "VAT" or iso_code == "MCO" or iso_code == "AND":
+        #    continue
 
-        if next_id > 255:
+        if next_id > 65535:
             raise RuntimeError(
-                "Exceeded 255 countries -- single-channel R assignment can't "
-                "go further. This is where the future 16-bit (R+G) country "
-                "ID comes in; not needed for the 110m dataset today."
+                "Exceeded 65535 countries"
             )
 
         country_id = next_id
@@ -122,8 +120,8 @@ def main():
 
     # Full RGBA, with G/B reserved-zero and A reserved-255 (data, not alpha).
     rgba = np.zeros((HEIGHT, WIDTH, 4), dtype=np.uint8)
-    rgba[..., 0] = id_array      # R = country ID (today's only live channel)
-    rgba[..., 1] = 0             # G reserved
+    rgba[..., 0] = id_array & 0xFF      # R = country ID (today's only live channel)
+    rgba[..., 1] = (id_array >> 8) & 0xFF             # G reserved
     rgba[..., 2] = 0             # B reserved
     rgba[..., 3] = 255           # A reserved -- constant today, so Unity's
                                   # alpha-is-transparency dilation has no
