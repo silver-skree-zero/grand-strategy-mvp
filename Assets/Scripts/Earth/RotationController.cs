@@ -6,11 +6,11 @@ public class UniversalDateTime : MonoBehaviour
 {
     public static UniversalDateTime Instance { get; private set; }
 
-    [SerializeField] private string utcDateTime = "2026-10-05T16:00:00Z";
     [SerializeField] private Light sun = null;
     [SerializeField] private Transform earthTransform;
     [SerializeField] private float calibrationOffset;
     [SerializeField] private Material atmosphereMaterial;
+    [SerializeField] private Simulator simulator;
 
     private Transform sunTransform;
 
@@ -18,11 +18,7 @@ public class UniversalDateTime : MonoBehaviour
     {
         get
         {
-            return DateTime.Parse(
-                utcDateTime,
-                null,
-                System.Globalization.DateTimeStyles.RoundtripKind
-            ).ToUniversalTime();
+            return simulator.Utc;
         }
     }
 
