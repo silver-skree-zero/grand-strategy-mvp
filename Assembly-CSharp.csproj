@@ -55,6 +55,7 @@
     <Compile Include="Assets\Scripts\Maps\BorderLineMeshBuilder.cs" />
     <Compile Include="Assets\Scripts\UI\CountryPicker.cs" />
     <Compile Include="Assets\Scripts\Camera\CameraController.cs" />
+    <Compile Include="Assets\Scripts\Earth\RotationController.cs" />
     <Compile Include="Assets\TutorialInfo\Readme.cs" />
     <Compile Include="Assets\Scripts\Maps\EarthGenerator.cs" />
     <Compile Include="Assets\Scripts\Maps\EquirectIDMapTest.cs" />

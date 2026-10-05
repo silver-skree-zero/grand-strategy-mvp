@@ -118,12 +118,12 @@ Material:
     - _GlossMapScale: 0
     - _Glossiness: 0
     - _GlossyReflections: 0
-    - _Intensity: 0.58
+    - _Intensity: 1.93
     - _Metallic: 0
     - _NightLight: 0.011
     - _OcclusionStrength: 1
-    - _Opacity: 0.47
-    - _OuterRadius: 1.046
+    - _Opacity: 0.16
+    - _OuterRadius: 1.1
     - _Parallax: 0.005
     - _QueueOffset: 0
     - _ReceiveShadows: 1
@@ -148,6 +148,6 @@ Material:
     - _Color: {r: 0.3820755, g: 0.80556875, b: 1, a: 0.101960786}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
-    - _SunDirection: {r: 0, g: -100, b: -100, a: 0}
+    - _SunDirection: {r: -0, g: 0.38480535, b: -0.9229977, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
