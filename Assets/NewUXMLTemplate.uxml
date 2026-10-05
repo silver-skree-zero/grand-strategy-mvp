@@ -1,0 +1,10 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../UIElementsSchema/UIElements.xsd" authoring-id="-1165872441" editor-extension-mode="False">
+    <ui:VisualElement style="flex-grow: 1;">
+        <ui:Label text="Label" name="DateTimeLabel" style="text-overflow: clip; color: rgb(255, 255, 255);"/>
+        <ui:Button text="Pause" name="PauseButton" style="height: 25px; width: 54px; white-space: pre; -unity-text-align: middle-center;"/>
+        <ui:Button text="1x" name="NormalButton" style="height: 25px; width: 54px;"/>
+        <ui:Button text="60x" name="FastButton" style="height: 25px; width: 54px;"/>
+        <ui:Button text="3600x" name="VeryFastButton" style="height: 25px; width: 68px;"/>
+        <ui:Button text="86400x" name="UltraFastButton" style="height: 25px; width: 68px;"/>
+    </ui:VisualElement>
+</ui:UXML>
