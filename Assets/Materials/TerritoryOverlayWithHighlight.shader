@@ -11,6 +11,9 @@ Shader "Custom/TerritoryOverlayWithHighlight"
         _HighlightID ("Highlighted ID", Float) = 0
         _HighlightColor ("Highlight Tint", Color) = (1,1,1,1)
         _HighlightStrength ("Highlight Strength", Range(0,1)) = 0.4
+
+        _BorderSDF ("Border Distance Field", 2D) = "white" {}
+        _BorderThreshold ("Border Threshold", Range(0,1)) = 0.15
     }
     SubShader
     {
@@ -36,6 +39,9 @@ Shader "Custom/TerritoryOverlayWithHighlight"
             float _HighlightID;
             fixed4 _HighlightColor;
             float _HighlightStrength;
+
+            sampler2D _BorderSDF;
+            float _BorderThreshold;
 
             struct appdata { float4 vertex : POSITION; float2 uv : TEXCOORD0; };
             struct v2f { float4 pos : SV_POSITION; float2 uv : TEXCOORD0; };
@@ -78,10 +84,20 @@ Shader "Custom/TerritoryOverlayWithHighlight"
 
                 bool isBorder = abs(idR - id) > 0.5 || abs(idL - id) > 0.5
                              || abs(idU - id) > 0.5 || abs(idD - id) > 0.5;
+                isBorder = false;
 
                 fixed4 result = isBorder
                     ? _BorderColor
                     : fixed4(IDToColor(id), _FillAlpha);
+
+                /*
+                float dist = tex2D(_BorderSDF, i.uv).r;
+                float signedDist = dist - _BorderThreshold; // keep _BorderThreshold small — see below
+                float w = fwidth(signedDist);               // screen-space-correct band width, no manual multiplier
+                float borderCoverage = 1.0 - smoothstep(0.0, w, signedDist);
+
+                fixed4 result = lerp(fixed4(IDToColor(id), _FillAlpha), _BorderColor, borderCoverage);
+                */
 
                 // Layer the highlight on top of whatever fill/border color
                 // was already decided above -- works correctly whether the

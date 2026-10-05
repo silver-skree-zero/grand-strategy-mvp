@@ -40,12 +40,21 @@ Material:
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
+    - _BorderSDF:
+        m_Texture: {fileID: 2800000, guid: f768d3d8ea9803546b9f7ff34e282035, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _MainTex:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Ints: []
-    m_Floats: []
+    m_Floats:
+    - _BorderThreshold: 0.092
+    - _FillAlpha: 1
+    - _HighlightStrength: 0.5
+    - _Saturation: 0.5
+    - _Value: 0.5
     m_Colors: []
   m_BuildTextureStacks: []
   m_AllowLocking: 1
