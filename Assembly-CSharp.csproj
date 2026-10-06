@@ -60,6 +60,7 @@
     <Compile Include="Assets\TutorialInfo\Readme.cs" />
     <Compile Include="Assets\Scripts\Maps\EarthGenerator.cs" />
     <Compile Include="Assets\Scripts\Maps\EquirectIDMapTest.cs" />
+    <Compile Include="Assets\Scripts\UI\EventWindowController.cs" />
     <Compile Include="Assets\Scripts\Maps\PoliticalMaps.cs" />
     <Compile Include="Assets\Scripts\UI\PoliticalMapController.cs" />
     <Compile Include="Assets\Scripts\Maps\SphereProjection.cs" />
