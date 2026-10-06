@@ -115,12 +115,17 @@ public class Simulator : MonoBehaviour
 
         dateTimeLabel.text = currentUtc.ToString("yyyy-MM-dd HH:mm:ss") + " UTC";
 
-        if(currentUtc >= DateTime.Parse("2026-09-01") && !septEvent)
+        if(currentUtc >= DateTime.Parse("2026-08-22") && !septEvent)
         {
             septEvent = true;
             eventWindowController.Show(
                 "A GREAT EVENT",
                 "Something historically significant has happened!",
+                null
+            );
+            eventWindowController.Show(
+                "ANOTHER GREAT EVENT",
+                "Something else historically significant has happened!",
                 null
             );
         }
