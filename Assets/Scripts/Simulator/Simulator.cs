@@ -17,6 +17,11 @@ public class Simulator : MonoBehaviour
 
     [SerializeField] private double timeScale = 1.0;
 
+    [SerializeField]
+    private EventService eventService;
+
+    private System.DateTime lastEvaluationDate;
+
     private DateTime currentUtc;
 
     private bool septEvent = false;
@@ -71,6 +76,8 @@ public class Simulator : MonoBehaviour
             second,
             DateTimeKind.Utc
         );
+
+        lastEvaluationDate = Utc.Date;
     }
 
     public void Pause()
@@ -96,11 +103,11 @@ public class Simulator : MonoBehaviour
             double p = 1.0 - Math.Pow(0.5,(1.0/mtth));
             if (UnityEngine.Random.value < p)
             {
-                eventWindowController.Show(
+                /*eventWindowController.Show(
                     "REPEATING EVENT",
                     "This event should have an MTTH of " + mtth,
                     null
-                );
+                );*/
             }
 
             lastMTTHDay = currentUtc.Day;
@@ -115,6 +122,18 @@ public class Simulator : MonoBehaviour
 
         dateTimeLabel.text = currentUtc.ToString("yyyy-MM-dd HH:mm:ss") + " UTC";
 
+        //Process daily events
+
+        DateTime currentDate = Utc.Date;
+
+        if (currentDate != lastEvaluationDate) {
+
+            lastEvaluationDate = currentDate;
+
+            EvaluateDailyEvents();
+        }
+
+        /*
         if(currentUtc >= DateTime.Parse("2026-08-22") && !septEvent)
         {
             septEvent = true;
@@ -129,6 +148,82 @@ public class Simulator : MonoBehaviour
                 null
             );
         }
+        */
+    }
+
+    private void EvaluateDailyEvents()
+    {
+        foreach (EventDefinition eventDefinition in eventService.Events)
+        {
+            EvaluateEvent(eventDefinition);
+        }
+    }
+
+    private void EvaluateEvent(EventDefinition eventDefinition)
+    {
+        if (eventDefinition.fireOnlyOnce &&
+            eventService.HasFired(eventDefinition.id))
+        {
+            return;
+        }
+
+        switch (eventDefinition.triggerType)
+        {
+            case "FixedDate":
+                EvaluateFixedDateEvent(eventDefinition);
+                break;
+
+            case "MeanTimeToHappen":
+                EvaluateMtthEvent(eventDefinition);
+                break;
+
+            case "Triggered":
+                // Nothing to do during daily evaluation.
+                break;
+        }
+    }
+
+    private void EvaluateFixedDateEvent(EventDefinition eventDefinition)
+    {
+        DateTime eventDate = eventDefinition.fixedDate.ToDateTime();
+
+        if (Utc.Date < eventDate)
+            return;
+
+        FireEvent(eventDefinition);
+    }
+
+    private float CalculateDailyProbability(float mtthDays)
+    {
+        return 1f - Mathf.Pow(0.5f, 1f / mtthDays);
+    }
+
+    private void EvaluateMtthEvent(EventDefinition eventDefinition)
+    {
+        float probability =
+            CalculateDailyProbability(eventDefinition.mtthDays);
+
+        if (UnityEngine.Random.value < probability)
+        {
+            FireEvent(eventDefinition);
+        }
+    }
+
+    private void FireEvent(EventDefinition eventDefinition)
+    {
+        Debug.Log(
+            $"Event fired: {eventDefinition.id} " +
+            $"at {Utc:yyyy-MM-dd}"
+        );
+
+        if (eventDefinition.fireOnlyOnce)
+        {
+            eventService.MarkFired(eventDefinition.id);
+        }
+
+        // Hand it to the UI/event presentation system.
+        eventWindowController.Show(eventDefinition);
+        Pause();
     }
 
     public void SetTimeScale(double scale)

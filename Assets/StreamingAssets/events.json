@@ -1,0 +1,28 @@
+{
+  "events": [
+    {
+      "id": "ww2_start",
+      "title": "The Second World War Begins",
+      "description": "Germany has invaded Poland.",
+      "scope": "Global",
+      "triggerType": "FixedDate",
+      "fireOnlyOnce": true,
+      "fixedDate": {
+        "year": 2026,
+        "month": 8,
+        "day": 24
+      },
+      "image": "events/test11"
+    },
+    {
+      "id": "political_crisis",
+      "title": "Political Crisis",
+      "description": "A political crisis has emerged.",
+      "scope": "Local",
+      "triggerType": "MeanTimeToHappen",
+      "fireOnlyOnce": false,
+      "mtthDays": 30,
+      "image": "events/test12"
+    }
+  ]
+}

@@ -6,6 +6,9 @@ public class EventWindowController : MonoBehaviour
     [SerializeField] private UIDocument uiDocument;
     [SerializeField] private Simulator simulator;
     [SerializeField] private VisualTreeAsset eventWindowTemplate;
+
+    [Header("Input")]
+    [SerializeField] private int dragButton = 0; // 0 = left mouse, 1 = right mouse, 2 = middle
     private VisualElement eventLayer;
     private Label eventTitle;
     private Image eventImage;
@@ -53,6 +56,46 @@ public class EventWindowController : MonoBehaviour
         };
     }
 
+    public void Show(EventDefinition eventDefinition)
+    {
+        VisualElement window =
+            eventWindowTemplate.Instantiate();
+
+        eventLayer.Add(window);
+
+        Label title =
+            window.Q<Label>("EventTitle");
+
+        Label description =
+            window.Q<Label>("EventDescription");
+
+        Image image =
+            window.Q<Image>("EventImage");
+
+        Button closeButton =
+            window.Q<Button>("ContinueButton");
+
+        title.text = eventDefinition.title;
+        description.text = eventDefinition.description;
+        image.image = Resources.Load<Texture2D>(eventDefinition.image);
+
+        Texture2D texture = Resources.Load<Texture2D>(eventDefinition.image);
+
+        if (texture == null)
+        {
+            Debug.LogWarning(
+                $"Could not load event image: Resources/{eventDefinition.image}"
+            );
+        }
+
+        closeButton.clicked += () =>
+        {
+            window.RemoveFromHierarchy();
+        };
+
+        MakeDraggable(window);
+    }
+
     private void MakeDraggable(VisualElement window)
     {
         VisualElement titleBar =
@@ -64,15 +107,20 @@ public class EventWindowController : MonoBehaviour
 
         titleBar.RegisterCallback<PointerDownEvent>(evt =>
         {
-            dragging = true;
-            mouseStart = evt.position;
+            if(evt.button == dragButton) {
+                dragging = true;
 
-            windowStart = new Vector2(
-                window.resolvedStyle.left,
-                window.resolvedStyle.top
-            );
+                mouseStart = new Vector2(evt.position.x, evt.position.y);
 
-            titleBar.CapturePointer(evt.pointerId);
+                windowStart = new Vector2(
+                    window.resolvedStyle.left,
+                    window.resolvedStyle.top
+                );
+
+                titleBar.CapturePointer(evt.pointerId);
+
+                evt.StopPropagation();
+            }
         });
 
         titleBar.RegisterCallback<PointerMoveEvent>(evt =>
@@ -80,16 +128,32 @@ public class EventWindowController : MonoBehaviour
             if (!dragging)
                 return;
 
-            Vector3 delta = evt.position - (new Vector3(mouseStart.x, mouseStart.y, 0));
+            Vector2 mousePosition = new Vector2(
+                evt.position.x,
+                evt.position.y
+            );
+
+            Vector2 delta = mousePosition - mouseStart;
 
             window.style.left = windowStart.x + delta.x;
             window.style.top = windowStart.y + delta.y;
+
+            evt.StopPropagation();
         });
 
         titleBar.RegisterCallback<PointerUpEvent>(evt =>
         {
-            dragging = false;
-            titleBar.ReleasePointer(evt.pointerId);
+            if(evt.button == dragButton) {
+                if (!dragging)
+                    return;
+
+                dragging = false;
+
+                if (titleBar.HasPointerCapture(evt.pointerId))
+                    titleBar.ReleasePointer(evt.pointerId);
+
+                evt.StopPropagation();
+            }
         });
     }
 

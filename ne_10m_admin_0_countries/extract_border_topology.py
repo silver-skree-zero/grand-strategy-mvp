@@ -31,7 +31,7 @@ import topojson as tp
 from shapely.validation import make_valid
 from shapely.geometry import Polygon, MultiPolygon, GeometryCollection
 
-SHAPEFILE_PATH = "ne_10m_admin_0_countries_usa.shp"
+SHAPEFILE_PATH = "ne_10m_admin_0_countries.shp"
 ID_LOOKUP_PATH = "country_id_lookup.json"   # from generate_national_id_map.py
 OUTPUT_PATH = "border_vectors.json"
 

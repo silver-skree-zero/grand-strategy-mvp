@@ -56,12 +56,18 @@
     <Compile Include="Assets\Scripts\UI\CountryPicker.cs" />
     <Compile Include="Assets\Scripts\Simulator\Simulator.cs" />
     <Compile Include="Assets\Scripts\Camera\CameraController.cs" />
+    <Compile Include="Assets\Scripts\Simulator\Events\EventDefinition.cs" />
+    <Compile Include="Assets\Scripts\Simulator\Events\EventDate.cs" />
     <Compile Include="Assets\Scripts\Earth\RotationController.cs" />
+    <Compile Include="Assets\Scripts\Simulator\Events\EventTriggerType.cs" />
     <Compile Include="Assets\TutorialInfo\Readme.cs" />
+    <Compile Include="Assets\Scripts\Simulator\Events\EventDatabase.cs" />
     <Compile Include="Assets\Scripts\Maps\EarthGenerator.cs" />
+    <Compile Include="Assets\Scripts\Simulator\Events\EventService.cs" />
     <Compile Include="Assets\Scripts\Maps\EquirectIDMapTest.cs" />
     <Compile Include="Assets\Scripts\UI\EventWindowController.cs" />
     <Compile Include="Assets\Scripts\Maps\PoliticalMaps.cs" />
+    <Compile Include="Assets\Scripts\Simulator\Events\EventScope.cs" />
     <Compile Include="Assets\Scripts\UI\PoliticalMapController.cs" />
     <Compile Include="Assets\Scripts\Maps\SphereProjection.cs" />
   </ItemGroup>
