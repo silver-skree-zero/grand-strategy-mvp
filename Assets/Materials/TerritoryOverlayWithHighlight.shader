@@ -82,9 +82,8 @@ Shader "Custom/TerritoryOverlayWithHighlight"
                 float idU = SampleID16(i.uv + float2(0, _IDTex_TexelSize.y));
                 float idD = SampleID16(i.uv - float2(0, _IDTex_TexelSize.y));
 
-                bool isBorder = abs(idR - id) > 0.5 || abs(idL - id) > 0.5
-                             || abs(idU - id) > 0.5 || abs(idD - id) > 0.5;
-                isBorder = false;
+                bool isBorder = (idR - id) > 0.5 || (idL - id) > 0.5
+                             || (idU - id) > 0.5 || (idD - id) > 0.5;
 
                 fixed4 result = isBorder
                     ? _BorderColor

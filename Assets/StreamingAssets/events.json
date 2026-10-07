@@ -21,7 +21,7 @@
       "scope": "Local",
       "triggerType": "MeanTimeToHappen",
       "fireOnlyOnce": false,
-      "mtthDays": 30,
+      "mtthDays": 10,
       "image": "events/test12"
     }
   ]

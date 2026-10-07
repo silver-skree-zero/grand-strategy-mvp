@@ -79,15 +79,6 @@ public class EventWindowController : MonoBehaviour
         description.text = eventDefinition.description;
         image.image = Resources.Load<Texture2D>(eventDefinition.image);
 
-        Texture2D texture = Resources.Load<Texture2D>(eventDefinition.image);
-
-        if (texture == null)
-        {
-            Debug.LogWarning(
-                $"Could not load event image: Resources/{eventDefinition.image}"
-            );
-        }
-
         closeButton.clicked += () =>
         {
             window.RemoveFromHierarchy();

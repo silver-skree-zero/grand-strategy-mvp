@@ -371,13 +371,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 410087039}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0.979152, z: -0.20312905, w: 0}
+  m_LocalRotation: {x: -0.14363393, y: 0.69236505, z: -0.14363393, w: -0.69236505}
   m_LocalPosition: {x: 0, y: 0, z: -3000}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 23.44, y: 180, z: 0}
+  m_LocalEulerAnglesHint: {x: 23.44, y: 270, z: 0}
 --- !u!114 &410087042
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1117,7 +1117,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: '::'
   sun: {fileID: 410087040}
   earthTransform: {fileID: 1406750338}
-  calibrationOffset: 90
+  calibrationOffset: 270
   atmosphereMaterial: {fileID: 2100000, guid: e818dc9ccd458414b9f467a939ef84c8, type: 2}
   simulator: {fileID: 2044672443}
 --- !u!1 &1590355043
@@ -1376,12 +1376,12 @@ MonoBehaviour:
   uiDocument: {fileID: 1660457006}
   eventWindowController: {fileID: 1590355044}
   year: 2026
-  month: 6
+  month: 8
   day: 21
-  hour: 9
-  minute: 43
+  hour: 12
+  minute: 0
   second: 0
-  timeScale: 0
+  timeScale: 1
   eventService: {fileID: 1590355046}
 --- !u!4 &2044672444
 Transform:

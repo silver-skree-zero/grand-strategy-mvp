@@ -60,11 +60,15 @@ public class UniversalDateTime : MonoBehaviour
         double minute = currentTime.Minute;
         double second = currentTime.Second;
 
-        earthTransform.SetPositionAndRotation(new Vector3(0,0,0), Quaternion.Euler(new Vector3(0, calibrationOffset + -360.0f * (float)((hour / 24) + ((minute / 24) / 60) + ((second / 24) / 3600)),0)));
+        float rotation = calibrationOffset + 360.0f * (float)((hour / 24) + ((minute / 24) / 60) + ((second / 24) / 3600));
 
-        sunTransform.SetPositionAndRotation(sunTransform.position, Quaternion.Euler(new Vector3(SolarDeclination, 0, 0)));
+        earthTransform.SetPositionAndRotation(new Vector3(0,0,0), Quaternion.Euler(new Vector3(0,0,0)));
+
+        sunTransform.SetPositionAndRotation(sunTransform.position, Quaternion.Euler(new Vector3(SolarDeclination, rotation, 0)));
 
         Vector3 sunDirection = -sunTransform.forward;
+
+        RenderSettings.skybox.SetFloat("_Rotation", -rotation);
 
         atmosphereMaterial.SetVector(
             "_SunDirection",
