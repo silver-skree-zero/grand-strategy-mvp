@@ -57,6 +57,7 @@
     <Compile Include="Assets\Scripts\Simulator\Simulator.cs" />
     <Compile Include="Assets\Scripts\Camera\CameraController.cs" />
     <Compile Include="Assets\Scripts\Simulator\Events\EventDefinition.cs" />
+    <Compile Include="Assets\Scripts\Maps\StateOwnershipRenderer.cs" />
     <Compile Include="Assets\Scripts\Simulator\Events\EventDate.cs" />
     <Compile Include="Assets\Scripts\Earth\RotationController.cs" />
     <Compile Include="Assets\Scripts\Simulator\Events\EventTriggerType.cs" />
