@@ -40,12 +40,12 @@ from PIL import Image
 
 # ---- Configuration ------------------------------------------------------
 
-SHAPEFILE_PATH = "ne_10m_admin_1_states_provinces.shp"
+SHAPEFILE_PATH = "ne_10m_admin_0_countries.shp"
 OUTPUT_ID_MAP_PATH = "country_id_map.png"
 OUTPUT_LOOKUP_PATH = "country_id_lookup.json"
 
-WIDTH = 8192
-HEIGHT = 4096
+WIDTH = 4096
+HEIGHT = 2048
 
 # Must match flipV in RuntimeUVSphere / CountryPicker / the shader.
 FLIP_V = False

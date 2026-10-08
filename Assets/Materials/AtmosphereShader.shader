@@ -7,17 +7,12 @@ Shader "Custom/Earth Atmosphere Volume"
         _Intensity ("Intensity", Range(0, 10)) = 1.5
         _Opacity ("Opacity", Range(0, 5)) = 1.0
 
-        // Atmosphere radius / Earth radius.
-        // 1.04 means the atmosphere extends 4% above the surface.
         _OuterRadius ("Outer Radius", Range(1.001, 1.2)) = 1.04
 
-        // Number of samples through the atmosphere.
         _Samples ("Ray Samples", Range(4, 32)) = 12
 
-        // How strongly sunlight affects the atmosphere.
         _SunInfluence ("Sun Influence", Range(0, 1)) = 1.0
 
-        // Small amount of atmospheric light on the night side.
         _NightLight ("Night Side Light", Range(0, 0.2)) = 0.02
 
         _SunDirection ("Sun Direction", Vector) = (0, 1, 0, 0)
@@ -31,13 +26,12 @@ Shader "Custom/Earth Atmosphere Volume"
             "RenderType" = "Transparent"
         }
 
-        // Render the front-facing side of the outer atmosphere sphere.
-        Cull Back
+        // Render both sides of the atmosphere sphere.
+        Cull Front
 
         ZWrite Off
-        ZTest LEqual
+        ZTest Always
 
-        // Normal alpha blending rather than additive blending.
         Blend SrcAlpha OneMinusSrcAlpha
 
         Lighting Off
@@ -62,10 +56,12 @@ Shader "Custom/Earth Atmosphere Volume"
 
             float4 _SunDirection;
 
+
             struct appdata
             {
                 float4 vertex : POSITION;
             };
+
 
             struct v2f
             {
@@ -73,93 +69,90 @@ Shader "Custom/Earth Atmosphere Volume"
                 float3 worldPosition : TEXCOORD0;
             };
 
+
             v2f vert(appdata v)
             {
                 v2f o;
 
-                o.vertex = UnityObjectToClipPos(v.vertex);
+                o.vertex =
+                    UnityObjectToClipPos(v.vertex);
 
                 o.worldPosition =
-                    mul(unity_ObjectToWorld, v.vertex).xyz;
+                    mul(
+                        unity_ObjectToWorld,
+                        v.vertex
+                    ).xyz;
 
                 return o;
             }
 
 
-            // Returns the far intersection distance of a ray
-            // with a sphere.
+            // --------------------------------------------------------
+            // Ray / sphere intersection.
             //
-            // Assumes the ray starts outside the sphere.
-            float RaySphereFar(
+            // Returns both intersections measured from rayOrigin.
+            // --------------------------------------------------------
+
+            bool RaySphere(
                 float3 rayOrigin,
                 float3 rayDirection,
                 float3 sphereCenter,
                 float sphereRadius,
-                out bool hit
+                out float tNear,
+                out float tFar
             )
             {
-                float3 oc = rayOrigin - sphereCenter;
+                float3 oc =
+                    rayOrigin - sphereCenter;
 
-                float b = dot(oc, rayDirection);
-                float c = dot(oc, oc) -
-                          sphereRadius * sphereRadius;
+                float b =
+                    dot(oc, rayDirection);
+
+                float c =
+                    dot(oc, oc) -
+                    sphereRadius * sphereRadius;
 
                 float discriminant =
                     b * b - c;
 
-                hit = discriminant >= 0.0;
+                if (discriminant < 0.0)
+                {
+                    tNear = 0.0;
+                    tFar = 0.0;
 
-                if (!hit)
-                    return 0.0;
+                    return false;
+                }
 
-                float sqrtD = sqrt(discriminant);
+                float sqrtD =
+                    sqrt(discriminant);
 
-                float tNear = -b - sqrtD;
-                float tFar  = -b + sqrtD;
+                tNear =
+                    -b - sqrtD;
 
-                return tFar;
-            }
+                tFar =
+                    -b + sqrtD;
 
-
-            // Returns the first intersection of a ray with a sphere.
-            float RaySphereNear(
-                float3 rayOrigin,
-                float3 rayDirection,
-                float3 sphereCenter,
-                float sphereRadius,
-                out bool hit
-            )
-            {
-                float3 oc = rayOrigin - sphereCenter;
-
-                float b = dot(oc, rayDirection);
-                float c = dot(oc, oc) -
-                          sphereRadius * sphereRadius;
-
-                float discriminant =
-                    b * b - c;
-
-                hit = discriminant >= 0.0;
-
-                if (!hit)
-                    return 0.0;
-
-                float sqrtD = sqrt(discriminant);
-
-                float tNear = -b - sqrtD;
-
-                return tNear;
+                return true;
             }
 
 
             fixed4 frag(v2f i) : SV_Target
             {
-                float3 cameraPosition = _WorldSpaceCameraPos;
+                float3 cameraPosition =
+                    _WorldSpaceCameraPos;
+
 
                 float3 rayDirection =
-                    normalize(i.worldPosition - cameraPosition);
+                    normalize(
+                        i.worldPosition -
+                        cameraPosition
+                    );
 
-                // Center of the atmosphere object.
+
+                // ----------------------------------------------------
+                // Atmosphere center.
+                // ----------------------------------------------------
+
                 float3 center =
                     mul(
                         unity_ObjectToWorld,
@@ -168,11 +161,9 @@ Shader "Custom/Earth Atmosphere Volume"
 
 
                 // ----------------------------------------------------
-                // Determine the actual world-space outer radius.
+                // Determine actual world-space atmosphere radius.
                 //
-                // Unity's default Sphere mesh has radius 0.5,
-                // so measuring from the object's center to its
-                // transformed +X vertex gives us the real radius.
+                // Unity sphere radius = 0.5.
                 // ----------------------------------------------------
 
                 float3 worldEdge =
@@ -182,149 +173,170 @@ Shader "Custom/Earth Atmosphere Volume"
                     ).xyz;
 
                 float outerRadius =
-                    length(worldEdge - center);
+                    length(
+                        worldEdge - center
+                    );
 
 
-                // Earth radius is derived from the requested
-                // atmosphere radius ratio.
-                //
-                // Example:
-                //
-                // Outer = 1.04
-                // Earth = 1.00
-                //
-                // Therefore:
-                //
-                // Earth / Outer = 1 / 1.04
-                //
+                // ----------------------------------------------------
+                // Earth radius.
+                // ----------------------------------------------------
 
                 float innerRadius =
-                    outerRadius / _OuterRadius;
+                    outerRadius /
+                    _OuterRadius;
 
 
                 // ----------------------------------------------------
-                // The current fragment is the near intersection with
-                // the outer atmosphere sphere because Cull Back is
-                // being used.
+                // Find the camera ray's intersection with the
+                // OUTER atmosphere sphere.
                 // ----------------------------------------------------
 
-                float3 fragmentToCamera =
-                    cameraPosition - i.worldPosition;
+                float outerNear;
+                float outerFar;
 
-                float tStart =
-                    length(fragmentToCamera);
-
-
-                // ----------------------------------------------------
-                // Find where this camera ray exits the outer sphere.
-                // ----------------------------------------------------
-
-                bool outerHit;
-
-                float tOuterFar =
-                    RaySphereFar(
+                bool outerHit =
+                    RaySphere(
                         cameraPosition,
                         rayDirection,
                         center,
                         outerRadius,
-                        outerHit
+                        outerNear,
+                        outerFar
                     );
-
 
                 if (!outerHit)
                     discard;
 
 
                 // ----------------------------------------------------
-                // Find where the ray first intersects the Earth.
-                //
-                // If it hits Earth, the atmosphere in front of Earth
-                // ends at the Earth's surface.
-                //
-                // If it doesn't hit Earth, the ray travels through
-                // the entire atmospheric shell and exits the far
-                // side of the atmosphere.
+                // Determine whether the camera is inside the
+                // atmosphere.
                 // ----------------------------------------------------
 
-                bool innerHit;
+                float cameraDistance =
+                    length(
+                        cameraPosition -
+                        center
+                    );
 
-                float tInner =
-                    RaySphereNear(
+
+                float tStart;
+
+                if (cameraDistance < outerRadius)
+                {
+                    // Camera is already inside the atmosphere.
+                    tStart = 0.0;
+                }
+                else
+                {
+                    // Camera is outside.
+                    tStart = max(
+                        outerNear,
+                        0.0
+                    );
+                }
+
+
+                // ----------------------------------------------------
+                // Find the camera ray's intersection with Earth.
+                // ----------------------------------------------------
+
+                float innerNear;
+                float innerFar;
+
+                bool innerHit =
+                    RaySphere(
                         cameraPosition,
                         rayDirection,
                         center,
                         innerRadius,
-                        innerHit
+                        innerNear,
+                        innerFar
                     );
 
 
+                // ----------------------------------------------------
+                // Determine where the atmospheric ray ends.
+                //
+                // Earth surface takes precedence if we hit Earth.
+                // Otherwise we march to the far side of the
+                // atmosphere.
+                // ----------------------------------------------------
+
                 float tEnd;
 
-                if (innerHit && tInner > tStart)
+                if (innerHit &&
+                    innerNear > tStart)
                 {
-                    tEnd = tInner;
+                    tEnd = innerNear;
                 }
                 else
                 {
-                    tEnd = tOuterFar;
+                    tEnd = outerFar;
                 }
 
 
+                // ----------------------------------------------------
+                // Make sure the interval is valid.
+                // ----------------------------------------------------
+
                 float pathLength =
-                    max(0.0, tEnd - tStart);
+                    max(
+                        0.0,
+                        tEnd - tStart
+                    );
 
                 if (pathLength <= 0.0)
                     discard;
 
 
                 // ----------------------------------------------------
-                // Ray march through the atmospheric volume.
+                // Ray march.
                 // ----------------------------------------------------
 
                 float accumulated = 0.0;
 
                 float samples =
-                    max(4.0, _Samples);
+                    max(
+                        4.0,
+                        _Samples
+                    );
 
                 float stepLength =
-                    pathLength / samples;
+                    pathLength /
+                    samples;
 
 
-                for (int sample = 0; sample < 32; sample++)
+                for (int sample = 0;
+                     sample < 32;
+                     sample++)
                 {
                     if (sample >= samples)
                         break;
 
 
-                    // Sample at the center of each interval.
                     float t =
                         tStart +
-                        stepLength * (sample + 0.5);
+                        stepLength *
+                        (sample + 0.5);
 
 
                     float3 position =
                         cameraPosition +
-                        rayDirection * t;
+                        rayDirection *
+                        t;
 
 
                     float distanceFromCenter =
-                        length(position - center);
+                        length(
+                            position -
+                            center
+                        );
 
 
                     // ------------------------------------------------
                     // Atmospheric density.
-                    //
-                    // At Earth surface:
-                    //
-                    //     radius = innerRadius
-                    //     density = 1
-                    //
-                    // At atmosphere edge:
-                    //
-                    //     radius = outerRadius
-                    //     density = 0
-                    //
-                    // This is the linear falloff you described.
                     // ------------------------------------------------
 
                     float density =
@@ -340,34 +352,37 @@ Shader "Custom/Earth Atmosphere Volume"
 
                     // ------------------------------------------------
                     // Sun illumination.
-                    //
-                    // The radial direction represents the local
-                    // "surface normal" of the atmosphere.
                     // ------------------------------------------------
 
                     float3 radial =
-                        normalize(position - center);
+                        normalize(
+                            position -
+                            center
+                        );
 
                     float3 sunDirection =
-                        normalize(_SunDirection.xyz);
+                        normalize(
+                            _SunDirection.xyz
+                        );
 
 
                     float sunlight =
                         saturate(
-                            dot(radial, sunDirection)
+                            dot(
+                                radial,
+                                sunDirection
+                            )
                         );
 
 
-                    // Allow a small amount of atmospheric light
-                    // on the night side.
                     sunlight =
                         max(
-                            sunlight * _SunInfluence,
+                            sunlight *
+                            _SunInfluence,
                             _NightLight
                         );
 
 
-                    // Density × illumination × distance traveled.
                     accumulated +=
                         density *
                         sunlight *
@@ -376,24 +391,19 @@ Shader "Custom/Earth Atmosphere Volume"
 
 
                 // ----------------------------------------------------
-                // Convert accumulated atmospheric density into
-                // pixel opacity.
-                //
-                // _Opacity controls the overall strength without
-                // changing the density profile.
+                // Convert density into opacity.
                 // ----------------------------------------------------
 
                 float alpha =
                     accumulated *
                     _Opacity;
 
-
                 alpha =
                     saturate(alpha);
 
 
                 // ----------------------------------------------------
-                // Color/intensity.
+                // Final color.
                 // ----------------------------------------------------
 
                 float3 color =
@@ -401,7 +411,10 @@ Shader "Custom/Earth Atmosphere Volume"
                     _Intensity;
 
 
-                return fixed4(color, alpha);
+                return fixed4(
+                    color,
+                    alpha
+                );
             }
 
             ENDCG
