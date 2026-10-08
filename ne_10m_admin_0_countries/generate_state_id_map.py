@@ -10,12 +10,10 @@ States, Provinces" dataset:
   2. Records each state's OWNING COUNTRY (structural/origin data, looked
      up via the shared country_id_lookup.json -- never baked into pixels,
      per the ownership-vs-geography split decided earlier).
-  3. MERGES any state below an area threshold into its largest same-country
-     neighbor, done once here at the vector level, before rasterization --
-     so the raster ID map, state_id_lookup.json, and (once built) any
-     state-level border/fill meshes all agree on the same merged regions.
-  4. Rasterizes the final, merged states into state_id_map.png using the
-     same R+G 16-bit channel packing as the national map.
+  3. Rasterizes every state into state_id_map.png using the same R+G
+     16-bit channel packing as the national map. (Small-state merging has
+     been removed for now; every feature that survives geometry repair
+     gets its own ID and its own lookup entry.)
 
 Requirements:
     pip install geopandas topojson shapely numpy pillow
@@ -28,7 +26,6 @@ import json
 
 import numpy as np
 import geopandas as gpd
-from shapely.ops import unary_union
 from shapely.validation import make_valid
 from shapely.geometry import MultiPolygon
 from PIL import Image
@@ -41,6 +38,7 @@ COUNTRY_ID_LOOKUP_PATH = "country_id_lookup.json"
 
 OUTPUT_ID_MAP_PATH = "state_id_map.png"
 OUTPUT_LOOKUP_PATH = "state_id_lookup.json"
+OUTPUT_OWNERSHIP_TEX_PATH = "state_owner_map.png"
 
 WIDTH = 4096
 HEIGHT = 2048
@@ -50,10 +48,6 @@ FLIP_V = False
 # country map without exploding vertex counts -- tune empirically.
 SIMPLIFY_EPSILON_DEG = 0.02
 QUANTIZATION = 1e6
-
-# Any state smaller than this (in equivalent ID-map pixels, estimated from
-# its polygon area) gets annexed into its largest same-country neighbor.
-AREA_THRESHOLD_PX = 10
 
 # Natural Earth admin-1's field naming for the owning country's code.
 ADM0_FIELD = "adm0_a3"
@@ -106,11 +100,10 @@ def _flatten_to_polygons(geom):
 
 
 def repair_invalid_geometries(gdf):
-    """make_valid rebuilds self-intersecting polygons into clean ones --
-    necessary before any unary_union call, since GEOS refuses to merge
-    invalid input (the 'side location conflict' error). Admin-1 data's
-    denser, more complex coastlines make this noticeably more likely than
-    it was for the country-level dataset."""
+    """make_valid rebuilds self-intersecting polygons into clean ones, so
+    rasterization and any later geometry operations never see invalid
+    input. Admin-1 data's denser, more complex coastlines make invalid
+    geometry noticeably more likely than in the country-level dataset."""
     def _repair(geom):
         if geom is None or geom.is_empty:
             return geom
@@ -132,67 +125,6 @@ def repair_invalid_geometries(gdf):
     return gdf
 
 
-def merge_small_states(gdf, area_threshold_px, width, height):
-    """Iteratively annexes any state below the area threshold into its
-    largest same-country touching neighbor. Runs entirely at the vector
-    level so every downstream consumer (raster, border lines, fill
-    meshes) sees the same, already-merged set of regions."""
-    pixels_per_deg2 = (width / 360.0) * (height / 180.0)
-
-    gdf = gdf.copy()  # "_merged_from" is expected to already exist (set in main())
-    unmergeable = set()
-
-    while True:
-        areas_px = gdf.geometry.area * pixels_per_deg2
-        below = gdf[(areas_px < area_threshold_px) & (~gdf.index.isin(unmergeable))]
-        if below.empty:
-            break
-
-        below_areas = areas_px.loc[below.index]
-        small_idx = below_areas.idxmin()
-        small_row = gdf.loc[small_idx]
-        small_geom = small_row.geometry
-
-        same_country = gdf[
-            (gdf[ADM0_FIELD] == small_row[ADM0_FIELD]) & (gdf.index != small_idx)
-        ]
-        touching = same_country[same_country.geometry.touches(small_geom)]
-
-        if touching.empty:
-            unmergeable.add(small_idx)
-            print(f"  No eligible same-country neighbor for "
-                  f"'{small_row.get(NAME_FIELD, '?')}' -- left as-is "
-                  f"(below threshold, {areas_px.loc[small_idx]:.1f}px)")
-            continue
-
-        touching_areas = touching.geometry.area * pixels_per_deg2
-        target_idx = touching_areas.idxmax()
-
-        try:
-            merged_geom = unary_union([gdf.loc[target_idx, "geometry"], small_geom])
-        except Exception as e:
-            # Shouldn't happen post-repair, but with thousands of features
-            # it's safer to skip one bad pair than crash the whole run.
-            print(f"  WARNING: union failed for '{small_row.get(NAME_FIELD, '?')}' "
-                  f"-> '{gdf.loc[target_idx, NAME_FIELD]}' ({e}); left unmerged")
-            unmergeable.add(small_idx)
-            continue
-        gdf.at[target_idx, "geometry"] = merged_geom
-        gdf.at[target_idx, "_merged_from"] = (
-            gdf.at[target_idx, "_merged_from"]
-            + [small_row.get(NAME_FIELD, "?")]
-            + small_row["_merged_from"]
-        )
-
-        print(f"  Merged '{small_row.get(NAME_FIELD, '?')}' "
-              f"({areas_px.loc[small_idx]:.1f}px) into "
-              f"'{gdf.loc[target_idx, NAME_FIELD]}'")
-
-        gdf = gdf.drop(index=small_idx)
-
-    return gdf
-
-
 def main():
     print("Building state topology (this can take a while for admin-1 data)...")
     gdf = build_simplified_gdf(
@@ -203,15 +135,11 @@ def main():
 
     print("Repairing invalid geometry...")
     gdf = repair_invalid_geometries(gdf)
-    gdf["_merged_from"] = [[] for _ in range(len(gdf))]
+    print(f"  {len(gdf)} features after repair")
 
     iso_to_country_id = load_iso_to_id(COUNTRY_ID_LOOKUP_PATH)
 
-    print("Merging states below the area threshold...")
-    gdf = merge_small_states(gdf, AREA_THRESHOLD_PX, WIDTH, HEIGHT)
-
-    # Assign final sequential state IDs only after merging has settled, so
-    # IDs aren't wasted on regions that no longer exist as their own unit.
+    # Deterministic ordering so state IDs are stable between runs.
     gdf = gdf.sort_values([ADM0_FIELD, NAME_FIELD]).reset_index(drop=True)
 
     lon_grid, lat_grid = pixel_grid_latlon(WIDTH, HEIGHT, FLIP_V)
@@ -234,7 +162,7 @@ def main():
         if country_id is None:
             print(f"WARNING: owning country '{country_iso}' for state "
                   f"'{row.get(NAME_FIELD, '?')}' not found in "
-                  f"{COUNTRY_ID_LOOKUP_PATH} -- origin_country_id will be null")
+                  f"{COUNTRY_ID_LOOKUP_PATH} -- origin_country_id will be 0")
 
         col_min, col_max, row_min, row_max = bbox_to_pixel_range(
             geom.bounds, WIDTH, HEIGHT, FLIP_V
@@ -247,14 +175,12 @@ def main():
         area_px = int(mask.sum())
         state_lookup[state_id] = {
             "name": row.get(NAME_FIELD, ""),
-            "origin_country_id": country_id,
+            "origin_country_id": country_id if country_id is not None else 0,
             "origin_country_iso": country_iso,
             "area_px": area_px,
-            "merged_from": row["_merged_from"],
         }
-        merged_note = f" (absorbed {len(row['_merged_from'])})" if row["_merged_from"] else ""
         print(f"ID {state_id}: {row.get(NAME_FIELD, '')} "
-              f"[{country_iso}] {area_px}px{merged_note}")
+              f"[{country_iso}] {area_px}px")
 
     with open(OUTPUT_LOOKUP_PATH, "w") as f:
         json.dump(state_lookup, f, indent=2)
@@ -268,6 +194,25 @@ def main():
     img = Image.fromarray(np.flipud(rgb), mode="RGB")
     img.save(OUTPUT_ID_MAP_PATH)
     print(f"Saved {OUTPUT_ID_MAP_PATH} ({WIDTH}x{HEIGHT})")
+
+    # Static state -> owning-country lookup, addressed the SAME way the ID
+    # map's (R,G) decodes to a state id: x = id % 256 (low byte), y = id //
+    # 256 (high byte). 256x256 exactly covers the full 16-bit id space, one
+    # texel per possible state id. This is a lookup table, not a geographic
+    # raster -- deliberately NOT flipud'd like the ID map above, since
+    # there's no lat/lon orientation here to match.
+    owner_rgb = np.zeros((256, 256, 3), dtype=np.uint8)
+    for state_id, info in state_lookup.items():
+        country_id = info["origin_country_id"]
+        if not country_id:
+            continue  # leave as (0,0,0) -- "unresolved owner"
+        x = state_id % 256
+        y = state_id // 256
+        owner_rgb[y, x, 0] = country_id & 0xFF
+        owner_rgb[y, x, 1] = (country_id >> 8) & 0xFF
+
+    Image.fromarray(owner_rgb, mode="RGB").save(OUTPUT_OWNERSHIP_TEX_PATH)
+    print(f"Saved {OUTPUT_OWNERSHIP_TEX_PATH} (256x256)")
 
 
 if __name__ == "__main__":

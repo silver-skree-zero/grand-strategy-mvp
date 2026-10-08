@@ -14,6 +14,11 @@ Shader "Custom/TerritoryOverlayWithHighlight"
 
         _BorderSDF ("Border Distance Field", 2D) = "white" {}
         _BorderThreshold ("Border Threshold", Range(0,1)) = 0.15
+
+        _StatePaletteTex ("State Palette (256x256)", 2D) = "black" {}
+        _CountryPaletteTex ("Country Palette (256x256)", 2D) = "black" {}
+        _OwnerTex ("State -> Current Owner (256x256)", 2D) = "black" {}
+        _ColorizeByCountry ("0=State, 1=Country", Range(0,1)) = 0
     }
     SubShader
     {
@@ -41,10 +46,16 @@ Shader "Custom/TerritoryOverlayWithHighlight"
             float _HighlightStrength;
 
             sampler2D _BorderSDF;
+            sampler2D _StatePaletteTex;
+            sampler2D _CountryPaletteTex;
+            sampler2D _OwnerTex;
+
+            float _ColorizeByCountry;
             float _BorderThreshold;
 
             struct appdata { float4 vertex : POSITION; float2 uv : TEXCOORD0; };
             struct v2f { float4 pos : SV_POSITION; float2 uv : TEXCOORD0; };
+            
 
             v2f vert (appdata v)
             {
@@ -66,10 +77,29 @@ Shader "Custom/TerritoryOverlayWithHighlight"
                 return hsv.z * lerp(float3(1,1,1), rgb, hsv.y);
             }
 
-            fixed3 IDToColor(float id)
+            float2 IdToPaletteUV(float id)
             {
-                float hue = frac(sin(id * 12.9898) * 43758.5453);
-                return HsvToRgb(float3(hue, _Saturation, _Value));
+                float idxR = fmod(id, 256.0);
+                float idxG = floor(id / 256.0);
+                return (float2(idxR, idxG) + 0.5) / 256.0;
+            }
+
+            fixed3 IDToColor(float stateId)
+            {
+                float2 stateUV = IdToPaletteUV(stateId);
+
+                if (_ColorizeByCountry < 0.5)
+                    return tex2Dlod(_StatePaletteTex, float4(stateUV, 0, 0)).rgb;
+
+                // National mode: state id -> current owner's country id -> country color
+                fixed4 ownerTexel = tex2Dlod(_OwnerTex, float4(stateUV, 0, 0));
+                float countryId = round(ownerTexel.r * 255.0) + round(ownerTexel.g * 255.0) * 256.0;
+
+                // Unowned/unresolved state: fall back to its own color rather than black
+                if (countryId < 0.5)
+                    return tex2Dlod(_StatePaletteTex, float4(stateUV, 0, 0)).rgb;
+
+                return tex2Dlod(_CountryPaletteTex, float4(IdToPaletteUV(countryId), 0, 0)).rgb;
             }
 
             fixed4 frag (v2f i) : SV_Target
@@ -84,6 +114,7 @@ Shader "Custom/TerritoryOverlayWithHighlight"
 
                 bool isBorder = (idR - id) > 0.5 || (idL - id) > 0.5
                              || (idU - id) > 0.5 || (idD - id) > 0.5;
+                isBorder = false;
 
                 fixed4 result = isBorder
                     ? _BorderColor
