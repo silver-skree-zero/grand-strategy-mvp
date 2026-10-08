@@ -120,6 +120,8 @@ Shader "Custom/TerritoryOverlayWithHighlight"
                     ? _BorderColor
                     : fixed4(IDToColor(id), _FillAlpha);
 
+                
+
                 /*
                 float dist = tex2D(_BorderSDF, i.uv).r;
                 float signedDist = dist - _BorderThreshold; // keep _BorderThreshold small — see below

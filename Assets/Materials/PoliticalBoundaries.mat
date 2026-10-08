@@ -64,7 +64,7 @@ Material:
     m_Floats:
     - _BorderThreshold: 0.092
     - _ColorizeByCountry: 1
-    - _FillAlpha: 1
+    - _FillAlpha: 0.5
     - _HighlightStrength: 0.5
     - _Saturation: 0.5
     - _Value: 0.5

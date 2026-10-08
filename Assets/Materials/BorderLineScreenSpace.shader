@@ -2,8 +2,10 @@ Shader "Custom/BorderLineScreenSpace"
 {
     Properties
     {
-        _Color ("Line Color", Color) = (0,0,0,1)
+        _Color ("Day Color", Color) = (0,0,0,1)
+        _NightColor ("Night Color", Color) = (0.6,0.7,0.9,1)
         _WidthPixels ("Width In Pixels", Float) = 2.0
+        _TerminatorSoftness ("Terminator Softness", Range(0.001,0.5)) = 0.08
     }
     SubShader
     {
@@ -14,13 +16,22 @@ Shader "Custom/BorderLineScreenSpace"
 
         Pass
         {
+            // Deliberately no LightMode tag: an untagged pass is drawn by both
+            // the Built-in pipeline and URP. The sun direction arrives through
+            // the global _BorderSunDir (see SunDirectionBroadcaster.cs) instead
+            // of Unity's per-pass light variables.
             CGPROGRAM
             #pragma vertex vert
             #pragma fragment frag
             #include "UnityCG.cginc"
 
             fixed4 _Color;
+            fixed4 _NightColor;
             float _WidthPixels;
+            float _TerminatorSoftness;
+
+            // Set globally by SunDirectionBroadcaster: world-space direction TO the sun.
+            float4 _BorderSunDir;
 
             struct appdata
             {
@@ -29,7 +40,11 @@ Shader "Custom/BorderLineScreenSpace"
                 float4 tangent : TANGENT;
             };
 
-            struct v2f { float4 pos : SV_POSITION; };
+            struct v2f
+            {
+                float4 pos : SV_POSITION;
+                float3 worldNormal : TEXCOORD0;
+            };
 
             v2f vert (appdata v)
             {
@@ -48,10 +63,29 @@ Shader "Custom/BorderLineScreenSpace"
                 clipPos.xy += screenPerp * side * pixelToClip * 0.5 * clipPos.w;
 
                 o.pos = clipPos;
+
+                // The mesh sits on a sphere centered on this object's origin
+                // (the border object is a child of the Earth, at local zero),
+                // so the surface normal is just the vertex direction.
+                o.worldNormal = UnityObjectToWorldNormal(normalize(v.vertex.xyz));
                 return o;
             }
 
-            fixed4 frag (v2f i) : SV_Target { return _Color; }
+            fixed4 frag (v2f i) : SV_Target
+            {
+                float3 normal = normalize(i.worldNormal);
+
+                // If nothing has set the sun direction, fall back to "all day"
+                // so the border still shows its primary color.
+                float sunLength = length(_BorderSunDir.xyz);
+                float3 toSun = sunLength > 0.001 ? _BorderSunDir.xyz / sunLength : normal;
+
+                float nDotL = dot(normal, toSun);
+                float softness = max(_TerminatorSoftness, 0.0001);
+                float day = smoothstep(-softness, softness, nDotL);
+
+                return lerp(_NightColor, _Color, day);
+            }
             ENDCG
         }
     }

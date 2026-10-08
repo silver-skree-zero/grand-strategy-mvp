@@ -47,8 +47,8 @@ OUTPUT_LOOKUP_PATH = "../Assets/Scripts/state_id_lookup.json"
 OUTPUT_OWNERSHIP_TEX_PATH = "state_owner_map.png"
 OUTPUT_MERGE_REPORT_PATH = "../Assets/Scripts/state_merge_report.json"
 
-WIDTH = 8192
-HEIGHT = 4096
+WIDTH = 16384  
+HEIGHT = 8192
 FLIP_V = False
 
 # States' finer detail can usually tolerate a smaller epsilon than the
@@ -66,7 +66,7 @@ CODE_FIELD = "adm1_code"
 MERGE_ENABLED = True
 
 # A state covering fewer ID-map pixels than this is annexed into a neighbor.
-AREA_THRESHOLD_PX = 500
+AREA_THRESHOLD_PX = 700
 
 # Roster order. Annexation can only target states that were already
 # processed, so the order decides how many small states find a neighbor:

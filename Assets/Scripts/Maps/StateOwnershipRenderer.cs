@@ -9,7 +9,6 @@ public class StateOwnershipRenderer : MonoBehaviour
 {
     [SerializeField] private TextAsset stateIdLookupJson;
     [SerializeField] private TextAsset countryIdLookupJson;
-    [SerializeField] private Material overlayMaterial;
     [SerializeField] private Renderer overlayRenderer;   // replaces the Material field
     private Material _mat;
 
@@ -45,9 +44,6 @@ public class StateOwnershipRenderer : MonoBehaviour
         _countryPalette = BuildHashPalette(countries.Keys);
         _ownerTex = BuildInitialOwnerTexture();
 
-        _mat.SetTexture("_StatePaletteTex", _statePalette);
-        _mat.SetTexture("_CountryPaletteTex", _countryPalette);
-        _mat.SetTexture("_OwnerTex", _ownerTex);
 
         var stateAdj = new Dictionary<int, HashSet<int>>();
         var countryAdj = new Dictionary<int, HashSet<int>>();
@@ -66,6 +62,10 @@ public class StateOwnershipRenderer : MonoBehaviour
 
         _statePalette   = BuildColoredPalette(_states.Keys, stateAdj);
         _countryPalette = BuildColoredPalette(countries.Keys, countryAdj);
+
+        _mat.SetTexture("_StatePaletteTex", _statePalette);
+        _mat.SetTexture("_CountryPaletteTex", _countryPalette);
+        _mat.SetTexture("_OwnerTex", _ownerTex);
     }
 
     public void SetViewMode(MapViewMode mode)
@@ -151,7 +151,7 @@ public class StateOwnershipRenderer : MonoBehaviour
         return Color.HSVToRGB(hue, 0.45f, 0.9f);
     }
 
-    private const int SwatchCount = 10;
+    private const int SwatchCount = 20;
 
     private static Color32[] BuildSwatches()
     {
