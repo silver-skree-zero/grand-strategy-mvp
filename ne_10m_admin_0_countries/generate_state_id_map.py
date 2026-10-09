@@ -38,16 +38,22 @@ from PIL import Image
 import shapely.vectorized
 
 from border_topology_common import build_simplified_gdf, load_iso_to_id
+from state_border_segments import extract_border_segments
 
 STATES_SHAPEFILE_PATH = "ne_10m_admin_1_states_provinces.shp"
-COUNTRY_ID_LOOKUP_PATH = "country_id_lookup.json"
+COUNTRY_ID_LOOKUP_PATH = "../Assets/Scripts/country_id_lookup.json"
 
-OUTPUT_ID_MAP_PATH = "../Assets/Textures/Earth/Countries/country_id_map.png"
+OUTPUT_ID_MAP_PATH = "../Assets/Textures/Earth/Countries/state_id_map.png"
 OUTPUT_LOOKUP_PATH = "../Assets/Scripts/state_id_lookup.json"
-OUTPUT_OWNERSHIP_TEX_PATH = "state_owner_map.png"
-OUTPUT_MERGE_REPORT_PATH = "../Assets/Scripts/state_merge_report.json"
+OUTPUT_OWNERSHIP_TEX_PATH = "../Assets/Textures/Earth/Countries/state_owner_map.png"
+OUTPUT_MERGE_REPORT_PATH = "state_merge_report.json"
 
-WIDTH = 16384  
+# Border linework between final states, for rebuilding national borders at
+# runtime when ownership changes (see state_border_segments.py).
+EXPORT_BORDER_SEGMENTS = True
+OUTPUT_BORDER_SEGMENTS_PATH = "../Assets/Scripts/state_border_segments.json"
+
+WIDTH = 16384
 HEIGHT = 8192
 FLIP_V = False
 
@@ -274,9 +280,10 @@ def main():
     merge_report = []
     unplaced = []
     left_small = []
+    feature_final_id = {}  # gdf row position -> final state id (only features that own pixels)
 
     next_id = 1
-    for _, row in gdf.iterrows():
+    for idx, row in gdf.iterrows():
         geom = row.geometry
         if geom is None or geom.is_empty:
             continue
@@ -304,6 +311,8 @@ def main():
                 if area_px > 0:
                     id_array[row_min:row_max, col_min:col_max][mask] = target_id
                 state_area[target_id] += area_px
+                if area_px > 0:
+                    feature_final_id[idx] = target_id
                 target = state_lookup[target_id]
                 target["area_px"] = state_area[target_id]
                 target["merged_from"].append(name)
@@ -349,6 +358,8 @@ def main():
         }
         id_country[state_id] = country_iso
         state_area[state_id] = area_px
+        if area_px > 0:
+            feature_final_id[idx] = state_id
         processed_geoms.setdefault(country_iso, []).append((state_id, geom))
         print(f"ID {state_id}: {name} [{country_iso}] {area_px}px")
 
@@ -361,6 +372,17 @@ def main():
     with open(OUTPUT_LOOKUP_PATH, "w") as f:
         json.dump(state_lookup, f, indent=2)
     print(f"Saved {OUTPUT_LOOKUP_PATH} ({len(state_lookup)} states)")
+
+    if EXPORT_BORDER_SEGMENTS:
+        print("Extracting border segments (this can take a few minutes)...")
+        geometries = list(gdf.geometry)
+        members = {}
+        for feature_idx, final_id in feature_final_id.items():
+            members.setdefault(final_id, []).append(geometries[feature_idx])
+        segments = extract_border_segments(members)
+        with open(OUTPUT_BORDER_SEGMENTS_PATH, "w") as f:
+            json.dump({"segments": segments}, f, separators=(",", ":"))
+        print(f"Saved {OUTPUT_BORDER_SEGMENTS_PATH} ({len(segments)} segments)")
 
     with open(OUTPUT_MERGE_REPORT_PATH, "w") as f:
         json.dump({"merged": merge_report, "unplaced": unplaced,

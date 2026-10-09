@@ -5,6 +5,7 @@ public class PoliticalMapController : MonoBehaviour
     [SerializeField] private CountryPicker picker;
     [SerializeField] private Renderer overlayRenderer;
     [SerializeField] private Texture2D idMap; // drag country_id_map.png here directly
+    [SerializeField] private StateOwnershipRenderer stateOwnershipRenderer;
 
     private Material _mat;
 
@@ -18,6 +19,13 @@ public class PoliticalMapController : MonoBehaviour
     private void OnEnable()
     {
         picker.OnCountryHoverChanged += id => _mat.SetFloat("_HighlightID", id);
-        picker.OnCountryClicked += id => Debug.Log($"Clicked country ID {id}");
+        picker.OnCountryClicked += id => onClick(id);
+    }
+
+    private void onClick(int id)
+    {
+        Debug.Log($"Clicked country ID {id}");
+        stateOwnershipRenderer.SetStateOwner(id, 155);
+        Debug.Log($"Clicked state now owned by country ID {stateOwnershipRenderer.GetOwner(id)}");
     }
 }

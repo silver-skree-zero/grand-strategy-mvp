@@ -74,5 +74,7 @@ public class UniversalDateTime : MonoBehaviour
             "_SunDirection",
             sunDirection
         );
+
+        Shader.SetGlobalVector("_BorderSunDir", -sun.transform.forward);
     }
 }

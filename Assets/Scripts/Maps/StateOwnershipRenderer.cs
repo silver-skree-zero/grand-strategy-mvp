@@ -34,16 +34,24 @@ public class StateOwnershipRenderer : MonoBehaviour
     private Texture2D _countryPalette; // static: built once, never changes
     private Texture2D _ownerTex;       // DYNAMIC: seeded from origin, mutated by conquest
 
+    private Dictionary<int, int> _owners;   // state id -> current owner country id
+    public bool IsReady { get; private set; }
+    public event System.Action OnOwnersChanged;
+
+    public int GetOwner(int stateId) => _owners.TryGetValue(stateId, out int c) ? c : 0;
+
     private void Start()
     {
         _mat = overlayRenderer.material;   // same instance PoliticalMapController gets
         _states = JsonConvert.DeserializeObject<Dictionary<int, StateInfo>>(stateIdLookupJson.text);
+
+        _owners = new Dictionary<int, int>();
+        foreach (var kv in _states) _owners[kv.Key] = kv.Value.origin_country_id ?? 0;
         var countries = JsonConvert.DeserializeObject<Dictionary<int, CountryInfo>>(countryIdLookupJson.text);
 
         _statePalette = BuildHashPalette(_states.Keys);
         _countryPalette = BuildHashPalette(countries.Keys);
         _ownerTex = BuildInitialOwnerTexture();
-
 
         var stateAdj = new Dictionary<int, HashSet<int>>();
         var countryAdj = new Dictionary<int, HashSet<int>>();
@@ -66,29 +74,33 @@ public class StateOwnershipRenderer : MonoBehaviour
         _mat.SetTexture("_StatePaletteTex", _statePalette);
         _mat.SetTexture("_CountryPaletteTex", _countryPalette);
         _mat.SetTexture("_OwnerTex", _ownerTex);
+
+        IsReady = true;
+        OnOwnersChanged?.Invoke();
+    }
+
+    public void SetStateOwner(int stateId, int newCountryId)
+    {
+        _owners[stateId] = newCountryId;
+        WriteOwnerTexel(stateId, newCountryId);
+        _ownerTex.Apply(false, false);
+        OnOwnersChanged?.Invoke();
+    }
+
+    public void SetStateOwners(IEnumerable<(int stateId, int countryId)> changes)
+    {
+        foreach (var (stateId, countryId) in changes)
+        {
+            _owners[stateId] = countryId;
+            WriteOwnerTexel(stateId, countryId);
+        }
+        _ownerTex.Apply(false, false);
+        OnOwnersChanged?.Invoke();   // once for the whole batch
     }
 
     public void SetViewMode(MapViewMode mode)
     {
         _mat.SetFloat("_ColorizeByCountry", mode == MapViewMode.National ? 1f : 0f);
-    }
-
-    /// <summary>Reassigns one state's current owner -- call this on annexation.</summary>
-    public void SetStateOwner(int stateId, int newCountryId)
-    {
-        WriteOwnerTexel(stateId, newCountryId);
-        _ownerTex.Apply(false, false);
-    }
-
-    /// <summary>
-    /// Reassigns several states at once (e.g. a whole country falling),
-    /// uploading to the GPU only once instead of once per state.
-    /// </summary>
-    public void SetStateOwners(IEnumerable<(int stateId, int countryId)> changes)
-    {
-        foreach (var (stateId, countryId) in changes)
-            WriteOwnerTexel(stateId, countryId);
-        _ownerTex.Apply(false, false);
     }
 
     private void WriteOwnerTexel(int stateId, int countryId)

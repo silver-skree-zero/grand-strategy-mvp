@@ -9,16 +9,10 @@ public class BorderLineMeshBuilder : MonoBehaviour
     [SerializeField] private TextAsset borderVectorsJson;
     [SerializeField] private float sphereRadius = 1f;      // must match RuntimeUVSphere.radius
     [SerializeField] private float surfaceOffset = 0.004f; // sit above the territory overlay shell
-    [SerializeField] private Light sun;
 
     private void Start()
     {
         BuildMesh();
-    }
-
-    private void Update()
-    {
-        Shader.SetGlobalVector("_BorderSunDir", -sun.transform.forward);
     }
 
     private void BuildMesh()
