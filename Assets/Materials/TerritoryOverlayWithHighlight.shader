@@ -18,7 +18,9 @@ Shader "Custom/TerritoryOverlayWithHighlight"
         _StatePaletteTex ("State Palette (256x256)", 2D) = "black" {}
         _CountryPaletteTex ("Country Palette (256x256)", 2D) = "black" {}
         _OwnerTex ("State -> Current Owner (256x256)", 2D) = "black" {}
+        _ControllerTex ("State -> Current Controller (256x256)", 2D) = "black" {}
         _ColorizeByCountry ("0=State, 1=Country", Range(0,1)) = 0
+        _PulseSoftness ("Occupation Pulse Softness", Range(0,1)) = 0.25
     }
     SubShader
     {
@@ -49,6 +51,7 @@ Shader "Custom/TerritoryOverlayWithHighlight"
             sampler2D _StatePaletteTex;
             sampler2D _CountryPaletteTex;
             sampler2D _OwnerTex;
+            sampler2D _ControllerTex;
 
             float _ColorizeByCountry;
             float _BorderThreshold;
@@ -56,6 +59,7 @@ Shader "Custom/TerritoryOverlayWithHighlight"
             struct appdata { float4 vertex : POSITION; float2 uv : TEXCOORD0; };
             struct v2f { float4 pos : SV_POSITION; float2 uv : TEXCOORD0; };
             
+            float _Pulse;
 
             v2f vert (appdata v)
             {
@@ -93,13 +97,21 @@ Shader "Custom/TerritoryOverlayWithHighlight"
 
                 // National mode: state id -> current owner's country id -> country color
                 fixed4 ownerTexel = tex2Dlod(_OwnerTex, float4(stateUV, 0, 0));
+                fixed4 ctrlTexel  = tex2Dlod(_ControllerTex, float4(stateUV, 0, 0));
                 float countryId = round(ownerTexel.r * 255.0) + round(ownerTexel.g * 255.0) * 256.0;
+                float controllerId = round(ctrlTexel.r * 255.0) + round(ctrlTexel.g * 255.0) * 256.0;
+                float occupied = any(abs(ownerTexel.rg - ctrlTexel.rg) > 0.002) ? 1.0 : 0.0;
 
                 // Unowned/unresolved state: fall back to its own color rather than black
                 if (countryId < 0.5)
                     return tex2Dlod(_StatePaletteTex, float4(stateUV, 0, 0)).rgb;
 
-                return tex2Dlod(_CountryPaletteTex, float4(IdToPaletteUV(countryId), 0, 0)).rgb;
+                fixed3 ownerCol = tex2Dlod(_CountryPaletteTex, float4(IdToPaletteUV(countryId), 0, 0)).rgb;
+                fixed3 ctrlCol = tex2Dlod(_CountryPaletteTex, float4(IdToPaletteUV(controllerId), 0, 0)).rgb;
+
+                //return tex2Dlod(_CountryPaletteTex, float4(IdToPaletteUV(countryId), 0, 0)).rgb;
+                //return ctrlTexel.rgb;
+                return lerp(ownerCol, ctrlCol, occupied * _Pulse);
             }
 
             fixed4 frag (v2f i) : SV_Target

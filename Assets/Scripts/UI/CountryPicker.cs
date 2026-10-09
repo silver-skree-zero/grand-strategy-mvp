@@ -9,6 +9,7 @@ public class CountryPicker : MonoBehaviour
 
     public event System.Action<int> OnCountryHoverChanged; // -1 = no country
     public event System.Action<int> OnCountryClicked;
+    public event System.Action<int> OnCountryMiddleClicked;
 
     private Texture2D _idMap;
     private Color32[] _idPixels;

@@ -33,12 +33,15 @@ public class StateOwnershipRenderer : MonoBehaviour
     private Texture2D _statePalette;   // static: built once, never changes
     private Texture2D _countryPalette; // static: built once, never changes
     private Texture2D _ownerTex;       // DYNAMIC: seeded from origin, mutated by conquest
+    private Texture2D _controllerTex;       // DYNAMIC: seeded from origin, mutated by conquest
 
     private Dictionary<int, int> _owners;   // state id -> current owner country id
+    private Dictionary<int, int> _controllers;   // state id -> current owner country id
     public bool IsReady { get; private set; }
     public event System.Action OnOwnersChanged;
 
     public int GetOwner(int stateId) => _owners.TryGetValue(stateId, out int c) ? c : 0;
+    public int GetController(int stateId) => _controllers.TryGetValue(stateId, out int c) ? c : 0;
 
     private void Start()
     {
@@ -46,12 +49,15 @@ public class StateOwnershipRenderer : MonoBehaviour
         _states = JsonConvert.DeserializeObject<Dictionary<int, StateInfo>>(stateIdLookupJson.text);
 
         _owners = new Dictionary<int, int>();
+        _controllers = new Dictionary<int, int>();
+
         foreach (var kv in _states) _owners[kv.Key] = kv.Value.origin_country_id ?? 0;
         var countries = JsonConvert.DeserializeObject<Dictionary<int, CountryInfo>>(countryIdLookupJson.text);
 
         _statePalette = BuildHashPalette(_states.Keys);
         _countryPalette = BuildHashPalette(countries.Keys);
         _ownerTex = BuildInitialOwnerTexture();
+        _controllerTex = BuildInitialOwnerTexture();
 
         var stateAdj = new Dictionary<int, HashSet<int>>();
         var countryAdj = new Dictionary<int, HashSet<int>>();
@@ -74,6 +80,7 @@ public class StateOwnershipRenderer : MonoBehaviour
         _mat.SetTexture("_StatePaletteTex", _statePalette);
         _mat.SetTexture("_CountryPaletteTex", _countryPalette);
         _mat.SetTexture("_OwnerTex", _ownerTex);
+        _mat.SetTexture("_ControllerTex", _controllerTex);
 
         IsReady = true;
         OnOwnersChanged?.Invoke();
@@ -98,6 +105,13 @@ public class StateOwnershipRenderer : MonoBehaviour
         OnOwnersChanged?.Invoke();   // once for the whole batch
     }
 
+    public void SetStateController(int stateId, int newCountryId)
+    {
+        _controllers[stateId] = newCountryId;  
+        WriteControllerTexel(stateId, newCountryId);  
+        _controllerTex.Apply(false, false);
+    }
+
     public void SetViewMode(MapViewMode mode)
     {
         _mat.SetFloat("_ColorizeByCountry", mode == MapViewMode.National ? 1f : 0f);
@@ -108,6 +122,13 @@ public class StateOwnershipRenderer : MonoBehaviour
         int x = stateId % PaletteSize;
         int y = stateId / PaletteSize;
         _ownerTex.SetPixel(x, y, PackId(countryId));
+    }
+
+    private void WriteControllerTexel(int stateId, int countryId)
+    {
+        int x = stateId % PaletteSize;
+        int y = stateId / PaletteSize;
+        _controllerTex.SetPixel(x, y, PackId(countryId));
     }
 
     private Texture2D BuildInitialOwnerTexture()
