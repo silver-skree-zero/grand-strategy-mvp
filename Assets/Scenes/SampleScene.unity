@@ -1511,9 +1511,10 @@ MonoBehaviour:
   segmentsJson: {fileID: 4900000, guid: 2c728e2ee8cb91e44a38f4c7a8dab422, type: 3}
   ownership: {fileID: 1366085641}
   sphereRadius: 1
-  surfaceOffset: 0.0000004
+  surfaceOffset: 0.00004
   maxSegmentDegrees: 1
   drawAllStateBorders: 0
+  simplifyTolerance: 0.03
 --- !u!1 &2044672442
 GameObject:
   m_ObjectHideFlags: 0
@@ -1553,6 +1554,8 @@ MonoBehaviour:
   second: 0
   timeScale: 0
   eventService: {fileID: 1590355046}
+  toggleKey: 284
+  updateInterval: 0.5
 --- !u!4 &2044672444
 Transform:
   m_ObjectHideFlags: 0

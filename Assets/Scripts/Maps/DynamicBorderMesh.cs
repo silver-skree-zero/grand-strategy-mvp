@@ -28,6 +28,7 @@ public class DynamicBorderMesh : MonoBehaviour
     [SerializeField] private float surfaceOffset = 0.004f;
     [SerializeField] private float maxSegmentDegrees = 1f;     // keeps long straight spans on the sphere surface
     [SerializeField] private bool drawAllStateBorders = false; // true: every state border; false: only where owners differ
+    [SerializeField] float simplifyTolerance = 0.03f;
 
     private class SegmentData
     {
@@ -142,7 +143,6 @@ public class DynamicBorderMesh : MonoBehaviour
             }
         }
 
-        Debug.Log($"Border rebuild: {_verts.Count / 4} segments");
         _mesh.Clear();
         _mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
         _mesh.SetVertices(_verts);
@@ -150,6 +150,35 @@ public class DynamicBorderMesh : MonoBehaviour
         _mesh.SetTangents(_tangents);
         _mesh.SetTriangles(_tris, 0);
         _mesh.RecalculateBounds();
+    }
+
+    // tolerance in degrees; 0.03 is about 1.3 px at 16384 wide
+    static List<float[]> Simplify(List<float[]> pts, float tol)
+    {
+        if (pts.Count < 3) return pts;
+        var keep = new bool[pts.Count];
+        keep[0] = keep[pts.Count - 1] = true;
+        var stack = new Stack<(int, int)>();
+        stack.Push((0, pts.Count - 1));
+        float tol2 = tol * tol;
+        while (stack.Count > 0)
+        {
+            var (a, b) = stack.Pop();
+            float ax = pts[a][0], ay = pts[a][1], dx = pts[b][0] - ax, dy = pts[b][1] - ay;
+            float len2 = dx * dx + dy * dy, maxD = -1f; int idx = -1;
+            for (int i = a + 1; i < b; i++)
+            {
+                float px = pts[i][0] - ax, py = pts[i][1] - ay;
+                float t = len2 > 0f ? Mathf.Clamp01((px * dx + py * dy) / len2) : 0f;
+                float ex = px - t * dx, ey = py - t * dy;
+                float d = ex * ex + ey * ey;
+                if (d > maxD) { maxD = d; idx = i; }
+            }
+            if (maxD > tol2) { keep[idx] = true; stack.Push((a, idx)); stack.Push((idx, b)); }
+        }
+        var result = new List<float[]>();
+        for (int i = 0; i < pts.Count; i++) if (keep[i]) result.Add(pts[i]);
+        return result;
     }
 
     // Subdivides long spans in lat/lon space before projecting, so every

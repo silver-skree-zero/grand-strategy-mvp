@@ -297,17 +297,13 @@ Shader "Custom/Earth Atmosphere Volume"
 
                 float accumulated = 0.0;
 
-                float samples =
-                    max(
-                        4.0,
-                        _Samples
-                    );
+                float samples = innerHit ? 4.0 : max(4.0, _Samples);
 
                 float stepLength =
                     pathLength /
                     samples;
 
-
+                [loop]
                 for (int sample = 0;
                      sample < 32;
                      sample++)
