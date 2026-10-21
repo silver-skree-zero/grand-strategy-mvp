@@ -1,0 +1,22 @@
+{
+  "_note": "PLACEHOLDER seed for testing the icon system. Coordinates are approximate; verify and replace when you curate the real list. type must match an icon style: datacenter, fab, power, port, spaceport, military, network, refinery, lab.",
+  "assets": [
+    {"id": "asset_ashburn_dc",      "name": "Ashburn data center corridor", "type": "datacenter", "lat": 39.04,  "lon": -77.49,  "country": "USA", "priority": 85, "detail": "Largest concentration of data centers in the world."},
+    {"id": "asset_bluffdale_dc",    "name": "Bluffdale data center",        "type": "datacenter", "lat": 40.43,  "lon": -111.93, "country": "USA", "priority": 70, "detail": "Large government-operated facility."},
+    {"id": "asset_dublin_dc",       "name": "Dublin data center cluster",   "type": "datacenter", "lat": 53.35,  "lon": -6.40,   "country": "IRL", "priority": 65, "detail": "European hyperscale hub."},
+    {"id": "asset_tsmc_hsinchu",    "name": "TSMC Hsinchu fabs",            "type": "fab",        "lat": 24.78,  "lon": 120.99,  "country": "TWN", "priority": 92, "detail": "Leading-edge semiconductor manufacturing."},
+    {"id": "asset_samsung_pyeongtaek","name": "Samsung Pyeongtaek campus",  "type": "fab",        "lat": 37.00,  "lon": 127.00,  "country": "KOR", "priority": 80, "detail": "Memory and logic semiconductor manufacturing."},
+    {"id": "asset_intel_hillsboro", "name": "Intel Hillsboro campus",       "type": "fab",        "lat": 45.54,  "lon": -122.91, "country": "USA", "priority": 70, "detail": "Semiconductor R&D and fabrication."},
+    {"id": "asset_asml_veldhoven",  "name": "ASML Veldhoven",               "type": "fab",        "lat": 51.41,  "lon": 5.40,    "country": "NLD", "priority": 75, "detail": "Lithography equipment manufacturer."},
+    {"id": "asset_three_gorges",    "name": "Three Gorges Dam",             "type": "power",      "lat": 30.82,  "lon": 111.00,  "country": "CHN", "priority": 75, "detail": "Largest hydroelectric station."},
+    {"id": "asset_zaporizhzhia_npp","name": "Zaporizhzhia nuclear plant",   "type": "power",      "lat": 47.51,  "lon": 34.59,   "country": "UKR", "priority": 70, "detail": "Largest nuclear plant in Europe."},
+    {"id": "asset_ksc",             "name": "Kennedy Space Center",         "type": "spaceport",  "lat": 28.57,  "lon": -80.65,  "country": "USA", "priority": 80, "detail": "Crewed and heavy-lift launches."},
+    {"id": "asset_baikonur",        "name": "Baikonur Cosmodrome",          "type": "spaceport",  "lat": 45.96,  "lon": 63.31,   "country": "KAZ", "priority": 70, "detail": "Historic launch site."},
+    {"id": "asset_jiuquan",         "name": "Jiuquan Satellite Launch Center","type": "spaceport","lat": 40.96,  "lon": 100.29,  "country": "CHN", "priority": 70, "detail": "Crewed and orbital launches."},
+    {"id": "asset_kourou",          "name": "Guiana Space Centre",          "type": "spaceport",  "lat": 5.24,   "lon": -52.77,  "country": "FRA", "priority": 65, "detail": "European launch site."},
+    {"id": "asset_yangshan",        "name": "Port of Shanghai (Yangshan)",  "type": "port",       "lat": 30.63,  "lon": 122.07,  "country": "CHN", "priority": 85, "detail": "Busiest container port in the world."},
+    {"id": "asset_singapore_port",  "name": "Port of Singapore",            "type": "port",       "lat": 1.26,   "lon": 103.84,  "country": "SGP", "priority": 85, "detail": "Major transshipment hub."},
+    {"id": "asset_rotterdam",       "name": "Port of Rotterdam",            "type": "port",       "lat": 51.95,  "lon": 4.14,    "country": "NLD", "priority": 75, "detail": "Largest port in Europe."},
+    {"id": "asset_ras_tanura",      "name": "Ras Tanura terminal",          "type": "refinery",   "lat": 26.64,  "lon": 50.16,   "country": "SAU", "priority": 80, "detail": "Major oil refining and export terminal."}
+  ]
+}

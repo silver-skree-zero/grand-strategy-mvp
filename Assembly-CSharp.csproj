@@ -63,6 +63,7 @@
     <Compile Include="Assets\Scripts\Earth\RotationController.cs" />
     <Compile Include="Assets\Scripts\Simulator\Events\EventTriggerType.cs" />
     <Compile Include="Assets\TutorialInfo\Readme.cs" />
+    <Compile Include="Assets\Scripts\UI\MapIcon.cs" />
     <Compile Include="Assets\Scripts\Simulator\Events\EventDatabase.cs" />
     <Compile Include="Assets\Scripts\Maps\EarthGenerator.cs" />
     <Compile Include="Assets\Scripts\Simulator\Events\EventService.cs" />
@@ -70,6 +71,8 @@
     <Compile Include="Assets\Scripts\UI\EventWindowController.cs" />
     <Compile Include="Assets\Scripts\Maps\PoliticalMaps.cs" />
     <Compile Include="Assets\Scripts\Simulator\Events\EventScope.cs" />
+    <Compile Include="Assets\Scripts\UI\MapIconInfoPresenter.cs" />
+    <Compile Include="Assets\Scripts\UI\MapIconLayer.cs" />
     <Compile Include="Assets\Scripts\UI\PoliticalMapController.cs" />
     <Compile Include="Assets\Scripts\Maps\SphereProjection.cs" />
   </ItemGroup>
@@ -78,6 +81,7 @@
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Mobile Overlay.shader" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Mobile-2-Pass.shader" />
     <None Include="Assets\Materials\TerritoryOverlayWithHighlight.shader" />
+    <None Include="Assets\Materials\MapIconBillboard.shader" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_Bitmap.shader" />
     <None Include="Assets\TutorialInfo\StyleSheets\ReadmeEditor.uss" />
     <None Include="Assets\TextMesh Pro\Shaders\TMPro_Mobile.cginc" />
