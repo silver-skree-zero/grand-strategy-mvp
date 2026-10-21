@@ -68,8 +68,11 @@ public class MapIconLayer : MonoBehaviour
     [Tooltip("X = camera distance to Earth centre, Y = minimum priority shown at that distance")]
     [SerializeField] private AnimationCurve minPriorityByDistance = new AnimationCurve(
         new Keyframe(12f, 0f), new Keyframe(18f, 45f), new Keyframe(30f, 80f));
-    [SerializeField] private float declutterCellPx = 34f;  // at most one icon per cell; 0 disables
+    [SerializeField] private float declutterCellPx = 34f;  // minimum on-screen spacing between icons; 0 disables
+    [SerializeField] private float priorityHysteresis = 6f; // visible icons stay until priority drops this far below the cutoff
     [SerializeField] private float recomputeInterval = 0.1f;
+    [Tooltip("Seconds for an icon to fade in or out when LOD / declutter changes. 0 = instant")]
+    [SerializeField] private float fadeTime = 0.25f;
     [Tooltip("Icon pixel scale vs camera distance (X distance, Y scale)")]
     [SerializeField] private AnimationCurve scaleByDistance = new AnimationCurve(
         new Keyframe(12f, 1f), new Keyframe(30f, 0.8f));
@@ -93,9 +96,17 @@ public class MapIconLayer : MonoBehaviour
     private readonly List<MapIcon> _icons = new List<MapIcon>();
     private readonly Dictionary<string, MapIcon> _byId = new Dictionary<string, MapIcon>();
     private readonly Dictionary<string, int> _styleByName = new Dictionary<string, int>();
-    private readonly Dictionary<int, int> _cellBest = new Dictionary<int, int>();
+    private readonly Dictionary<int, List<Vector2>> _accepted = new Dictionary<int, List<Vector2>>();
+    private readonly Stack<List<Vector2>> _listPool = new Stack<List<Vector2>>();
+    private readonly List<int> _order = new List<int>();
+    private bool _orderDirty = true;
+    private bool[] _wasVisible = new bool[0];
+    private bool[] _nowVisible = new bool[0];
     private readonly List<int> _visible = new List<int>();
     private readonly List<int> _indices = new List<int>();
+    private readonly List<float> _alpha = new List<float>();   // per icon, 0..1, animated
+    private readonly List<int> _drawn = new List<int>();       // icons with alpha > 0
+    private bool _indicesDirty = true;
 
     private readonly List<Vector3> _verts = new List<Vector3>();
     private readonly List<Vector2> _uv0 = new List<Vector2>();
@@ -155,6 +166,8 @@ public class MapIconLayer : MonoBehaviour
         _icons[i] = _icons[last];
         _icons[i].index = i;
         _icons.RemoveAt(last);
+        _alpha[i] = _alpha[last];
+        _alpha.RemoveAt(last);
         _byId.Remove(id);
         if (_selected == icon) _selected = null;
         if (Hovered == icon) SetHovered(null);
@@ -192,6 +205,7 @@ public class MapIconLayer : MonoBehaviour
         icon.styleIndex = _styleByName.TryGetValue(icon.type ?? "", out int s) ? s : 0;
         icon.index = _icons.Count;
         _icons.Add(icon);
+        _alpha.Add(0f);
         _byId[icon.id] = icon;
         _geometryDirty = _visibilityDirty = true;
     }
@@ -215,6 +229,8 @@ public class MapIconLayer : MonoBehaviour
             _visibilityDirty = false;
         }
 
+        StepFades();
+
         float dist = (cam.transform.position - transform.position).magnitude;
         material.SetFloat(IconScaleId, scaleByDistance.Evaluate(dist));
 
@@ -235,6 +251,7 @@ public class MapIconLayer : MonoBehaviour
     private void RebuildGeometry()
     {
         _geometryDirty = false;
+        _orderDirty = true;
         _verts.Clear(); _uv0.Clear(); _uv1.Clear(); _colors.Clear();
         for (int i = 0; i < _icons.Count; i++)
         {
@@ -250,11 +267,12 @@ public class MapIconLayer : MonoBehaviour
                 _verts.Add(p);
                 _uv0.Add(new Vector2(cx < 0 ? u0 : u1, cy < 0 ? v0 : v1));
                 _uv1.Add(new Vector2(cx * h, cy * h));
-                _colors.Add(st.tint);
+                _colors.Add(ColorFor(icon));
             }
         }
 
         _mesh.Clear();
+        _indicesDirty = true;                          // Clear() drops the triangles too
         _mesh.indexFormat = IndexFormat.UInt32;        // Clear() resets this
         _mesh.SetVertices(_verts);
         _mesh.SetUVs(0, _uv0);
@@ -291,59 +309,136 @@ public class MapIconLayer : MonoBehaviour
         return Vector3.Dot(n, toCam);
     }
 
-    private bool Passes(MapIcon icon, float minPriority)
-    {
-        if (!styles[icon.styleIndex].visible) return false;
-        return icon.priority >= minPriority || icon == _selected;
-    }
-
+    // Icons are considered in priority order (highest first). An icon is kept
+    // if no already-kept icon is within declutterCellPx of it on screen.
+    // Hysteresis stops flicker: an icon that is already showing needs a
+    // smaller clearance, a lower priority threshold and a looser limb test
+    // than an icon that is about to appear.
     private void RecomputeVisible()
     {
+        if (_orderDirty)
+        {
+            _order.Clear();
+            for (int i = 0; i < _icons.Count; i++) _order.Add(i);
+            _order.Sort((x, y) =>
+            {
+                int c = _icons[y].priority.CompareTo(_icons[x].priority);
+                return c != 0 ? c : x.CompareTo(y);
+            });
+            _orderDirty = false;
+        }
+        if (_wasVisible.Length != _icons.Count) _wasVisible = new bool[_icons.Count];
+        if (_nowVisible.Length != _icons.Count) _nowVisible = new bool[_icons.Count];
+        Array.Clear(_nowVisible, 0, _nowVisible.Length);
+
         _visible.Clear();
-        _cellBest.Clear();
+        foreach (var list in _accepted.Values) { list.Clear(); _listPool.Push(list); }
+        _accepted.Clear();
 
         float dist = (cam.transform.position - transform.position).magnitude;
         float minPriority = minPriorityByDistance.Evaluate(dist);
+        float cell = Mathf.Max(declutterCellPx, 1f);
+
+        foreach (int i in _order)
+        {
+            var icon = _icons[i];
+            bool was = _wasVisible[i];
+            bool selected = icon == _selected;
+
+            if (!styles[icon.styleIndex].visible) continue;
+            if (!selected && icon.priority < minPriority - (was ? priorityHysteresis : 0f)) continue;
+
+            Vector3 world = transform.TransformPoint(LatLonToLocal(icon.lat, icon.lon));
+            if (Facing(world) < (was ? 0.0f : 0.04f)) continue;       // far side of the globe
+            Vector3 sp = cam.WorldToScreenPoint(world);
+            if (sp.z <= 0f) continue;
+            Vector2 p = new Vector2(sp.x, sp.y);
+
+            if (declutterCellPx > 0f && !selected)
+            {
+                float r = declutterCellPx * (was ? 0.8f : 1f);
+                float r2 = r * r;
+                int cx = Mathf.FloorToInt(p.x / cell), cy = Mathf.FloorToInt(p.y / cell);
+                bool blocked = false;
+                for (int dx = -1; dx <= 1 && !blocked; dx++)
+                    for (int dy = -1; dy <= 1 && !blocked; dy++)
+                        if (_accepted.TryGetValue(CellKey(cx + dx, cy + dy), out var list))
+                            foreach (var q in list)
+                                if ((q - p).sqrMagnitude < r2) { blocked = true; break; }
+                if (blocked) continue;
+
+                int key = CellKey(cx, cy);
+                if (!_accepted.TryGetValue(key, out var mine))
+                {
+                    mine = _listPool.Count > 0 ? _listPool.Pop() : new List<Vector2>();
+                    _accepted[key] = mine;
+                }
+                mine.Add(p);
+            }
+
+            _visible.Add(i);
+            _nowVisible[i] = true;
+        }
+
+        (_wasVisible, _nowVisible) = (_nowVisible, _wasVisible);
+
+    }
+
+    // Fades each icon toward its target (visible = 1, hidden = 0). Icons stay in
+    // the mesh while alpha > 0, so they can fade out instead of vanishing.
+    private void StepFades()
+    {
+        if (_geometryDirty || _alpha.Count != _icons.Count) return;
+        float step = fadeTime > 0f ? Time.unscaledDeltaTime / fadeTime : 1f;
+        bool colorsChanged = false, membershipChanged = false;
 
         for (int i = 0; i < _icons.Count; i++)
         {
-            var icon = _icons[i];
-            if (!Passes(icon, minPriority)) continue;
-
-            Vector3 world = transform.TransformPoint(LatLonToLocal(icon.lat, icon.lon));
-            if (Facing(world) < 0.02f) continue;                 // far side of the globe
-
-            if (declutterCellPx > 0f && icon != _selected)
-            {
-                Vector3 sp = cam.WorldToScreenPoint(world);
-                if (sp.z <= 0f) continue;
-                int cx = Mathf.FloorToInt(sp.x / declutterCellPx);
-                int cy = Mathf.FloorToInt(sp.y / declutterCellPx);
-                int key = cx * 73856093 ^ cy * 19349663;
-                if (_cellBest.TryGetValue(key, out int other))
-                {
-                    if (_icons[other].priority >= icon.priority) continue;
-                    _cellBest[key] = i;
-                }
-                else _cellBest[key] = i;
-            }
-            else _visible.Add(i);
+            float target = (i < _wasVisible.Length && _wasVisible[i]) ? 1f : 0f;
+            float a = _alpha[i];
+            if (a == target) continue;
+            float na = Mathf.MoveTowards(a, target, step);
+            _alpha[i] = na;
+            colorsChanged = true;
+            if ((a <= 0f) != (na <= 0f)) membershipChanged = true;
+            WriteColor(_icons[i]);
         }
 
-        if (declutterCellPx > 0f)
-            foreach (var kv in _cellBest) _visible.Add(kv.Value);
-        if (_selected != null && !_visible.Contains(_selected.index) && Passes(_selected, 0f))
-            _visible.Add(_selected.index);
+        if (colorsChanged) _mesh.SetColors(_colors);
+        if (membershipChanged || _indicesDirty) RebuildIndices();
+    }
 
+    private void RebuildIndices()
+    {
+        _indicesDirty = false;
+        _drawn.Clear();
         _indices.Clear();
-        foreach (int i in _visible)
+        for (int i = 0; i < _icons.Count; i++)
         {
+            if (_alpha[i] <= 0f) continue;
+            _drawn.Add(i);
             int b = i * 4;
             _indices.Add(b); _indices.Add(b + 2); _indices.Add(b + 1);
             _indices.Add(b); _indices.Add(b + 3); _indices.Add(b + 2);
         }
         _mesh.SetIndices(_indices, MeshTopology.Triangles, 0, false);
     }
+
+    private Color ColorFor(MapIcon icon)
+    {
+        Color c = (icon == Hovered) ? hoverTint : styles[icon.styleIndex].tint;
+        c.a *= _alpha[icon.index];
+        return c;
+    }
+
+    private void WriteColor(MapIcon icon)
+    {
+        Color c = ColorFor(icon);
+        int b = icon.index * 4;
+        for (int k = 0; k < 4; k++) _colors[b + k] = c;
+    }
+
+    private static int CellKey(int cx, int cy) => cx * 73856093 ^ cy * 19349663;
 
     // ---- Picking -----------------------------------------------------------
     private void HandlePicking()
@@ -353,8 +448,9 @@ public class MapIconLayer : MonoBehaviour
         Vector2 mouse = Input.mousePosition;
         float best = pickRadiusPx * pickRadiusPx;
         MapIcon hit = null;
-        foreach (int i in _visible)
+        foreach (int i in _drawn)
         {
+            if (_alpha[i] < 0.5f) continue;                      // still fading in/out
             var icon = _icons[i];
             Vector3 world = transform.TransformPoint(LatLonToLocal(icon.lat, icon.lon));
             if (Facing(world) < 0.1f) continue;
@@ -380,8 +476,9 @@ public class MapIconLayer : MonoBehaviour
     private void SetHovered(MapIcon icon)
     {
         if (icon == Hovered) return;
-        if (Hovered != null) StyleIcon(Hovered, false);
-        Hovered = icon;
+        var previous = Hovered;
+        Hovered = icon;                       // ColorFor reads Hovered
+        if (previous != null) StyleIcon(previous, false);
         if (icon != null) StyleIcon(icon, true);
         _mesh.SetUVs(1, _uv1);
         _mesh.SetColors(_colors);
@@ -399,7 +496,7 @@ public class MapIconLayer : MonoBehaviour
             float cx = (c == 0 || c == 3) ? -1f : 1f;
             float cy = (c < 2) ? -1f : 1f;
             _uv1[b + c] = new Vector2(cx * h, cy * h);
-            _colors[b + c] = hover ? hoverTint : st.tint;
+            _colors[b + c] = ColorFor(icon);
         }
     }
 

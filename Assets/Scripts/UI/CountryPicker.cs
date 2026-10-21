@@ -6,6 +6,7 @@ public class CountryPicker : MonoBehaviour
     [SerializeField] private Camera cam;
     [SerializeField] private bool flipV = false;
     [SerializeField] private float dragThresholdPixels = 6f;
+    [SerializeField] private MapIconLayer mapIconLayer = null;
 
     public event System.Action<int> OnCountryHoverChanged; // -1 = no country
     public event System.Action<int> OnCountryClicked;
@@ -31,6 +32,12 @@ public class CountryPicker : MonoBehaviour
         if (_idPixels == null) return;
 
         int id = SampleCountryIDUnderMouse();
+
+        if(MapIconLayer.IsPointerOverIcon) {
+            id = 0;
+            _currentHoverID = id;
+            OnCountryHoverChanged?.Invoke(id);
+        }
 
         if (id != _currentHoverID)
         {
