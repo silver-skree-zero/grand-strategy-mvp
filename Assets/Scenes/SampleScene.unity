@@ -1038,6 +1038,7 @@ MonoBehaviour:
   cam: {fileID: 330585545}
   flipV: 0
   dragThresholdPixels: 6
+  mapIconLayer: {fileID: 0}
 --- !u!4 &1366085639
 Transform:
   m_ObjectHideFlags: 0
@@ -1380,23 +1381,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e0520abc4016e77419a677edabd0b8ad, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
-  iconsJson: {fileID: 4900000, guid: 4eb276c736a5c3a41af6d95ec3ed1f30, type: 3}
+  iconsJson: {fileID: 4900000, guid: fcca573ea36dc5240acf2a0e4d9b3fd4, type: 3}
   material: {fileID: 2100000, guid: 77954010d27328340a26daf6856554ef, type: 2}
   cam: {fileID: 330585545}
   renderQueue: 3100
   sphereRadius: 1
-  surfaceOffset: 0.01
+  surfaceOffset: 0.0004
   atlasColumns: 4
   atlasRows: 4
   styles:
   - name: city
     atlasIndex: 0
-    tint: {r: 1, g: 1, b: 1, a: 1}
+    tint: {r: 1, g: 0, b: 0, a: 1}
     sizePx: 18
     visible: 1
   - name: capital
     atlasIndex: 1
-    tint: {r: 1, g: 1, b: 1, a: 1}
+    tint: {r: 1, g: 1, b: 0, a: 1}
     sizePx: 18
     visible: 1
   - name: datacenter
@@ -1478,7 +1479,9 @@ MonoBehaviour:
     m_PostInfinity: 2
     m_RotationOrder: 4
   declutterCellPx: 34
+  priorityHysteresis: 6
   recomputeInterval: 0.1
+  fadeTime: 0.25
   scaleByDistance:
     serializedVersion: 2
     m_Curve:
