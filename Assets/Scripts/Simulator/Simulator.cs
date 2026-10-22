@@ -17,10 +17,23 @@ public class Simulator : MonoBehaviour
 
     [SerializeField] private double timeScale = 1.0;
 
-    [SerializeField]
-    private EventService eventService;
+    [SerializeField] private EventService eventService;
 
-    private System.DateTime lastEvaluationDate;
+        [SerializeField] KeyCode toggleKey = KeyCode.F3;
+    [SerializeField] float updateInterval = 0.5f;
+
+    bool _visible = true;
+    float _accum;
+    int _frames;
+    float _timeLeft;
+    string _text = "";
+
+    void OnGUI()
+    {
+        if (_visible) GUI.Label(new Rect(1200, 10, 220, 24), _text);
+    }
+
+    private DateTime lastEvaluationDate;
 
     private DateTime currentUtc;
 
@@ -78,6 +91,7 @@ public class Simulator : MonoBehaviour
         );
 
         lastEvaluationDate = Utc.Date;
+        _timeLeft = updateInterval;
     }
 
     public void Pause()
@@ -133,22 +147,20 @@ public class Simulator : MonoBehaviour
             EvaluateDailyEvents();
         }
 
-        /*
-        if(currentUtc >= DateTime.Parse("2026-08-22") && !septEvent)
+        if (Input.GetKeyDown(toggleKey)) _visible = !_visible;
+
+        _timeLeft -= Time.unscaledDeltaTime;
+        _accum += Time.unscaledDeltaTime;
+        _frames++;
+
+        if (_timeLeft <= 0f)
         {
-            septEvent = true;
-            eventWindowController.Show(
-                "A GREAT EVENT",
-                "Something historically significant has happened!",
-                null
-            );
-            eventWindowController.Show(
-                "ANOTHER GREAT EVENT",
-                "Something else historically significant has happened!",
-                null
-            );
+            float avg = _accum / _frames;
+            _text = $"{1f / avg:0} FPS ({avg * 1000f:0.0} ms)";
+            _timeLeft = updateInterval;
+            _accum = 0f;
+            _frames = 0;
         }
-        */
     }
 
     private void EvaluateDailyEvents()
