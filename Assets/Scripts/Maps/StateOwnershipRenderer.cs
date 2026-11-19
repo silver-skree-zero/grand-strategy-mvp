@@ -43,6 +43,8 @@ public class StateOwnershipRenderer : MonoBehaviour
     public int GetOwner(int stateId) => _owners.TryGetValue(stateId, out int c) ? c : 0;
     public int GetController(int stateId) => _controllers.TryGetValue(stateId, out int c) ? c : 0;
 
+    private RegionDictionary regionDict = new RegionDictionary();
+
     private void Start()
     {
         _mat = overlayRenderer.material;   // same instance PoliticalMapController gets
@@ -64,6 +66,10 @@ public class StateOwnershipRenderer : MonoBehaviour
         foreach (var kv in _states)
         {
             int ca = kv.Value.origin_country_id ?? 0;
+
+            //Build initial region dictionary
+            regionDict.createEntity(kv.Key, kv.Value.name);
+
             if (kv.Value.neighbors == null) continue;
             foreach (int nb in kv.Value.neighbors)
             {
@@ -115,6 +121,10 @@ public class StateOwnershipRenderer : MonoBehaviour
     public void SetViewMode(MapViewMode mode)
     {
         _mat.SetFloat("_ColorizeByCountry", mode == MapViewMode.National ? 1f : 0f);
+    }
+
+    public RegionDictionary getRegionDictionary() {
+        return regionDict;
     }
 
     private void WriteOwnerTexel(int stateId, int countryId)

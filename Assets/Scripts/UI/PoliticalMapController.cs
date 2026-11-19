@@ -36,15 +36,17 @@ public class PoliticalMapController : MonoBehaviour
 
     private void onClick(int id)
     {
-        Debug.Log($"Clicked country ID {id}");
+        RegionEntity clickedEntity = stateOwnershipRenderer.getRegionDictionary().getEntity(id);
+        Debug.Log($"Clicked state {clickedEntity.name} with ID {id} and population {clickedEntity.pop}");
         stateOwnershipRenderer.SetStateOwner(id, 155);
         Debug.Log($"Clicked state now owned by country ID {stateOwnershipRenderer.GetOwner(id)}");
     }
 
     private void onMiddleClick(int id)
     {
-        Debug.Log($"Clicked country ID {id}");
+        RegionEntity clickedEntity = stateOwnershipRenderer.getRegionDictionary().getEntity(id);
+        Debug.Log($"Clicked state {clickedEntity.name} with ID {id} and population {clickedEntity.pop}");
         stateOwnershipRenderer.SetStateController(id, 155);
-        Debug.Log($"Clicked state now controlled by country ID {stateOwnershipRenderer.GetController(id)}");
+        Debug.Log($"Clicked state now owned by country ID {stateOwnershipRenderer.GetOwner(id)}");
     }
 }
